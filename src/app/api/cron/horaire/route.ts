@@ -1,6 +1,7 @@
 // Tâche planifiée lancée toutes les heures par Vercel (voir vercel.json).
 import { NextResponse, type NextRequest } from "next/server";
 import { closeAbandonedAttempts, expireInvitations, sendReminders } from "@/lib/jobs/hourly";
+import { processGradingQueue } from "@/lib/results";
 
 export const maxDuration = 300;
 
@@ -14,6 +15,8 @@ export async function GET(req: NextRequest) {
     abandoned: await closeAbandonedAttempts(),
     expired: await expireInvitations(),
     reminders: await sendReminders(),
+    // Réponses restées en attente (IA indisponible au moment du test).
+    graded: await processGradingQueue({ limit: 40 }),
   };
   return NextResponse.json(result);
 }

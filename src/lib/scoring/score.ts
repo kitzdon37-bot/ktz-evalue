@@ -31,8 +31,9 @@ export function computeScores(items: ScoredItem[]): Scores {
   let complete = true;
   for (const [skillId, s] of bySkill) {
     const score = s.max > 0 ? (s.got / s.max) * 100 : 0;
-    skillScores[skillId] = round1(score);
+    // Une compétence dont des réponses attendent la correction n'a pas encore de score.
     if (s.pending) complete = false;
+    else skillScores[skillId] = round1(score);
     weighted += score * s.weight;
     totalWeight += s.weight;
   }

@@ -17,6 +17,9 @@ import {
 } from "@/lib/candidate/attempt";
 import { donePage, messagePage, questionPage, welcomePage } from "@/lib/candidate/views";
 
+// La fin du test déclenche la correction par l'IA en arrière-plan.
+export const maxDuration = 300;
+
 const HTML_HEADERS = {
   "Content-Type": "text/html; charset=utf-8",
   // Jamais de cache : chaque affichage reflète l'état réel du passage.

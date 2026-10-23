@@ -78,7 +78,10 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]">) {
           )}
           {test.status !== "DRAFT" && (
             <>
-              <Link href={`/tests/${id}/inviter`} className={`${btn.primary} w-full`}>
+              <Link href={`/tests/${id}/resultats`} className={`${btn.primary} w-full`}>
+                Résultats et classement
+              </Link>
+              <Link href={`/tests/${id}/inviter`} className={`${btn.secondary} w-full`}>
                 {test.status === "PUBLISHED" && editable ? "Inviter des candidats" : "Suivi des candidats"}
               </Link>
               <Link href={`/tests/${id}/apercu`} className={`${btn.secondary} w-full`}>

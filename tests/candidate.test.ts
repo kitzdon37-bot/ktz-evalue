@@ -129,6 +129,7 @@ describe("calcul des scores", () => {
     ]);
     expect(pending.complete).toBe(false);
     expect(pending.globalScore).toBeNull();
+    expect(pending.skillScores).toEqual({});
   });
 });
 

@@ -9,6 +9,7 @@ import { AUTO_GRADED, type QuestionData, type QuestionType } from "@/lib/tests/m
 import { gradeClosed, type AnswerContent } from "@/lib/scoring/grade";
 import { computeScores } from "@/lib/scoring/score";
 import { notifyRecruiterOfCompletion } from "@/lib/messages";
+import { analyzeAttempt, processGradingQueue } from "@/lib/results";
 import { drawQuestions, type DrawnQuestion } from "./draw";
 
 // Marge accordée pour la latence réseau (3G) avant de considérer un temps comme dépassé.
@@ -234,8 +235,17 @@ export async function finishAttempt(
       db.attempt.update({ where: { id: attemptId }, data: { purgeAt } }),
       db.invitation.update({ where: { id: inv.id }, data: { status: "COMPLETED" } }),
     ]);
-    // Email au recruteur après la réponse, pour ne pas ralentir le candidat.
-    after(() => notifyRecruiterOfCompletion(attemptId));
+    // Après la réponse au candidat (pour ne pas le ralentir) : analyse des signaux,
+    // correction des réponses ouvertes par l'IA, puis email au recruteur.
+    after(async () => {
+      try {
+        await analyzeAttempt(attemptId);
+        await processGradingQueue({ attemptId });
+      } catch (e) {
+        console.error("[fin du test] analyse ou correction", e);
+      }
+      await notifyRecruiterOfCompletion(attemptId);
+    });
   }
   return db.attempt.findUniqueOrThrow({ where: { id: attemptId } });
 }
