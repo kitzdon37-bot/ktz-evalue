@@ -1,0 +1,666 @@
+// Schéma de la base de données de KTZ Évalue.
+// Couvre toutes les données de la section 10 du cahier des charges.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────── Entreprises, comptes, sessions ─────────────
+
+enum UserRole {
+  OWNER // propriétaire
+  RECRUITER // recruteur
+  VIEWER // lecteur
+}
+
+model Company {
+  id                 String    @id @default(cuid())
+  name               String
+  sector             String?
+  country            String    @default("CF")
+  city               String?
+  logoUrl            String?
+  primaryColor       String?
+  secondaryColor     String?
+  creditsRemaining   Int       @default(0)
+  aiMonthlyCapCents  Int       @default(2000) // plafond de dépense IA
+  badgesAllowed      Boolean   @default(true) // l'entreprise peut refuser que ses tests donnent des badges
+  ktzEmploiCompanyId String?   @unique
+  createdAt          DateTime  @default(now())
+  deletedAt          DateTime?
+
+  users         User[]
+  teamInvites   TeamInvitation[]
+  tests         Test[]
+  candidates    Candidate[]
+  invitations   Invitation[]
+  attempts      Attempt[]
+  subscriptions Subscription[]
+  payments      Payment[]
+  apiKeys       ApiKey[]
+  webhooks      Webhook[]
+  messages      Message[]
+  aiUsages      AiUsage[]
+  badges        Badge[]
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  passwordHash    String?
+  name            String
+  role            UserRole  @default(OWNER)
+  companyId       String? // vide pour l'équipe KTZ
+  company         Company?  @relation(fields: [companyId], references: [id])
+  isPlatformAdmin Boolean   @default(false)
+  emailVerifiedAt DateTime?
+  failedLogins    Int       @default(0)
+  lockedUntil     DateTime?
+  createdAt       DateTime  @default(now())
+  deletedAt       DateTime?
+
+  sessions       Session[]
+  authTokens     AuthToken[]
+  testsCreated   Test[]           @relation("TestCreator")
+  scoreOverrides Answer[]         @relation("ScoreOverrider")
+  invitesSent    TeamInvitation[]
+
+  @@index([companyId])
+}
+
+model Session {
+  id        String   @id // empreinte (hash) du jeton contenu dans le cookie
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  userAgent String?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+enum AuthTokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  MAGIC_LINK
+}
+
+model AuthToken {
+  id        String        @id @default(cuid())
+  tokenHash String        @unique
+  type      AuthTokenType
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime      @default(now())
+
+  @@index([userId, type])
+}
+
+model TeamInvitation {
+  id          String    @id @default(cuid())
+  companyId   String
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  email       String
+  role        UserRole  @default(RECRUITER)
+  tokenHash   String    @unique
+  invitedById String
+  invitedBy   User      @relation(fields: [invitedById], references: [id])
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([companyId])
+}
+
+// ───────────── Tests, compétences, questions, bibliothèque ─────────────
+
+enum TestStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  ARCHIVED
+}
+
+enum Level {
+  BEGINNER
+  CONFIRMED
+  EXPERT
+}
+
+enum Language {
+  FR
+  EN
+}
+
+enum QuestionType {
+  MCQ_SINGLE
+  MCQ_MULTI
+  TRUE_FALSE
+  SHORT_ANSWER
+  FREE_TEXT
+  SCENARIO
+  ORAL
+}
+
+enum QuestionOrigin {
+  AI
+  BANK
+  MANUAL
+}
+
+model Test {
+  id                   String         @id @default(cuid())
+  companyId            String
+  company              Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdById          String
+  createdBy            User           @relation("TestCreator", fields: [createdById], references: [id])
+  title                String
+  jobTitle             String
+  jobDescription       String?        @db.Text
+  sourceFileUrl        String?
+  level                Level
+  language             Language       @default(FR)
+  durationMinutes      Int // 15, 30, 45 ou 60
+  questionCount        Int // 10 à 30
+  questionTypes        QuestionType[]
+  passThreshold        Int            @default(60)
+  status               TestStatus     @default(DRAFT)
+  // anti-triche
+  shuffleQuestions     Boolean        @default(true)
+  shuffleChoices       Boolean        @default(true)
+  blockPaste           Boolean        @default(true)
+  requireFullscreen    Boolean        @default(true)
+  webcamEnabled        Boolean        @default(false)
+  webcamIntervalSec    Int            @default(45)
+  // diffusion
+  showScoreToCandidate Boolean        @default(false)
+  badgesEnabled        Boolean        @default(true)
+  deadline             DateTime?
+  publicToken          String?        @unique // lien public du test
+  publicMaxAttempts    Int?
+  reminderHours        Int[]          @default([48, 24])
+  templateId           String?
+  template             Template?      @relation(fields: [templateId], references: [id])
+  duplicatedFromId     String?
+  publishedAt          DateTime?
+  closedAt             DateTime?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  skills      Skill[]
+  invitations Invitation[]
+  attempts    Attempt[]
+  badges      Badge[]
+
+  @@index([companyId, status])
+}
+
+// Modèle de la bibliothèque (par métier)
+model Template {
+  id          String   @id @default(cuid())
+  profession  String
+  title       String
+  description String?  @db.Text
+  level       Level
+  language    Language @default(FR)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  skills Skill[]
+  tests  Test[]
+}
+
+// Compétence d'un test OU d'un modèle de bibliothèque
+model Skill {
+  id         String    @id @default(cuid())
+  testId     String?
+  test       Test?     @relation(fields: [testId], references: [id], onDelete: Cascade)
+  templateId String?
+  template   Template? @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  name       String
+  weight     Int // poids dans le score, en %
+  position   Int       @default(0)
+
+  questions Question[]
+  badges    Badge[]
+
+  @@index([testId])
+  @@index([templateId])
+}
+
+model Question {
+  id               String         @id @default(cuid())
+  skillId          String
+  skill            Skill          @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  type             QuestionType
+  prompt           String         @db.Text
+  choices          Json? // [{ id, text }]
+  correctAnswer    Json? // JAMAIS envoyé au candidat
+  rubric           Json? // grille de correction, JAMAIS envoyée au candidat
+  explanation      String?        @db.Text
+  difficulty       Level
+  suggestedTimeSec Int
+  points           Int            @default(1)
+  origin           QuestionOrigin @default(AI)
+  isReserve        Boolean        @default(false) // réserve pour varier les versions
+  position         Int            @default(0)
+  createdAt        DateTime       @default(now())
+
+  answers         Answer[]
+  integrityEvents IntegrityEvent[]
+
+  @@index([skillId])
+}
+
+// ───────────── Candidats, invitations, passages, réponses ─────────────
+
+enum Channel {
+  EMAIL
+  WHATSAPP
+  KTZ_EMPLOI
+  PUBLIC_LINK
+  API
+}
+
+enum InvitationStatus {
+  PENDING
+  SENT
+  OPENED
+  STARTED
+  COMPLETED
+  EXPIRED
+  CANCELLED
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  COMPLETED
+  TIMED_OUT
+  ABANDONED
+}
+
+enum GradingStatus {
+  PENDING
+  QUEUED
+  IN_PROGRESS
+  DONE
+  FAILED
+}
+
+enum Reliability {
+  HIGH // Élevée
+  TO_CHECK // À vérifier
+  LOW // Faible
+}
+
+enum RecruiterStatus {
+  TO_REVIEW // À examiner
+  SHORTLISTED // Retenu
+  INTERVIEW // Entretien
+  REJECTED // Écarté
+}
+
+// Candidat, propre à chaque entreprise
+model Candidate {
+  id              String   @id @default(cuid())
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name            String
+  email           String?
+  phone           String?
+  ktzEmploiUserId String?
+  createdAt       DateTime @default(now())
+
+  invitations Invitation[]
+  attempts    Attempt[]
+  badges      Badge[]
+
+  @@unique([companyId, email])
+  @@unique([companyId, phone])
+}
+
+model Invitation {
+  id               String           @id @default(cuid())
+  companyId        String
+  company          Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  testId           String
+  test             Test             @relation(fields: [testId], references: [id], onDelete: Cascade)
+  candidateId      String
+  candidate        Candidate        @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  channel          Channel
+  token            String           @unique // lien à usage unique
+  expiresAt        DateTime
+  status           InvitationStatus @default(PENDING)
+  remindersSent    Int              @default(0)
+  lastReminderAt   DateTime?
+  extraTimePercent Int              @default(0) // temps majoré (+50 %)
+  externalRef      String? // candidature KTZ Emploi ou logiciel de recrutement
+  createdAt        DateTime         @default(now())
+
+  attempt  Attempt?
+  messages Message[]
+
+  @@index([testId, status])
+  @@index([companyId])
+}
+
+// Passage d'un test par un candidat
+model Attempt {
+  id                 String          @id @default(cuid())
+  companyId          String
+  company            Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  testId             String
+  test               Test            @relation(fields: [testId], references: [id], onDelete: Cascade)
+  candidateId        String
+  candidate          Candidate       @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  invitationId       String          @unique
+  invitation         Invitation      @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  questionOrder      Json // [{ questionId, choiceOrder }] tirées et mélangées
+  currentIndex       Int             @default(0)
+  startedAt          DateTime        @default(now())
+  endsAt             DateTime // chronomètre global, côté serveur
+  completedAt        DateTime?
+  status             AttemptStatus   @default(IN_PROGRESS)
+  userAgent          String?
+  deviceId           String? // pour détecter un changement d'appareil
+  ip                 String?
+  consentDataAt      DateTime?
+  consentMicAt       DateTime?
+  consentWebcamAt    DateTime?
+  micAvailable       Boolean?
+  cameraAvailable    Boolean?
+  globalScore        Float?
+  skillScores        Json? // { skillId: score }
+  passed             Boolean?
+  reliability        Reliability?
+  reliabilitySummary String?
+  interviewQuestions Json? // 2 ou 3 questions à reposer en entretien
+  gradingStatus      GradingStatus   @default(PENDING)
+  recruiterStatus    RecruiterStatus @default(TO_REVIEW)
+  recruiterNote      String?         @db.Text
+  purgeAt            DateTime? // suppression 12 mois après le test
+
+  answers         Answer[]
+  integrityEvents IntegrityEvent[]
+  webcamPhotos    WebcamPhoto[]
+  badges          Badge[]
+
+  @@unique([testId, candidateId]) // un seul passage par candidat
+  @@index([companyId, testId])
+  @@index([purgeAt])
+}
+
+model Answer {
+  id               String        @id @default(cuid())
+  attemptId        String
+  attempt          Attempt       @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId       String
+  question         Question      @relation(fields: [questionId], references: [id])
+  content          Json? // texte, choix cochés ou valeur
+  audioUrl         String?
+  audioDurationSec Int?
+  audioPurgeAt     DateTime? // suppression 90 jours après le test
+  transcript       String?       @db.Text
+  timeSpentSec     Int
+  submittedAt      DateTime      @default(now())
+  autoScore        Float? // correction automatique, sans IA
+  aiScore          Float?
+  aiJustification  String?       @db.Text
+  aiRubricResults  Json? // critères atteints ou manqués
+  gradingStatus    GradingStatus @default(PENDING)
+  gradingTries     Int           @default(0)
+  overrideScore    Float?
+  overriddenById   String?
+  overriddenBy     User?         @relation("ScoreOverrider", fields: [overriddenById], references: [id])
+  overriddenAt     DateTime?
+
+  @@unique([attemptId, questionId]) // un renvoi après coupure ne crée pas de doublon
+  @@index([gradingStatus])
+  @@index([audioPurgeAt])
+}
+
+enum IntegrityEventType {
+  TAB_HIDDEN
+  FULLSCREEN_EXIT
+  PASTE
+  FAST_ANSWER
+  DEVICE_CHANGE
+  SIMILAR_TEXT
+  NO_FACE
+  MULTIPLE_FACES
+  CAMERA_OFF
+}
+
+model IntegrityEvent {
+  id         String             @id @default(cuid())
+  attemptId  String
+  attempt    Attempt            @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId String?
+  question   Question?          @relation(fields: [questionId], references: [id])
+  type       IntegrityEventType
+  occurredAt DateTime
+  durationMs Int?
+  details    Json?
+
+  @@index([attemptId])
+}
+
+model WebcamPhoto {
+  id        String   @id @default(cuid())
+  attemptId String
+  attempt   Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  takenAt   DateTime
+  blobUrl   String
+  faceCount Int?
+  deleteAt  DateTime // 90 jours après le test
+
+  @@index([attemptId])
+  @@index([deleteAt])
+}
+
+model Badge {
+  id               String    @id @default(cuid())
+  verificationCode String    @unique // page publique /badge/[code]
+  candidateId      String
+  candidate        Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  companyId        String
+  company          Company   @relation(fields: [companyId], references: [id])
+  testId           String
+  test             Test      @relation(fields: [testId], references: [id])
+  attemptId        String
+  attempt          Attempt   @relation(fields: [attemptId], references: [id])
+  skillId          String?
+  skill            Skill?    @relation(fields: [skillId], references: [id], onDelete: SetNull)
+  skillName        String // copié, au cas où le test change
+  score            Float
+  issuedAt         DateTime  @default(now())
+  expiresAt        DateTime?
+  visible          Boolean   @default(false) // rien n'est publié sans l'accord du candidat
+  ktzEmploiUserId  String?
+
+  @@index([candidateId])
+  @@index([ktzEmploiUserId])
+}
+
+// ───────────── Messages WhatsApp et email ─────────────
+
+enum MessageStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  FAILED
+}
+
+model Message {
+  id                String        @id @default(cuid())
+  companyId         String?
+  company           Company?      @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  invitationId      String?
+  invitation        Invitation?   @relation(fields: [invitationId], references: [id], onDelete: SetNull)
+  channel           Channel // EMAIL ou WHATSAPP
+  recipient         String
+  template          String // invitation, relance_48h, confirmation…
+  status            MessageStatus @default(QUEUED)
+  providerMessageId String?
+  error             String?
+  sentAt            DateTime?
+  createdAt         DateTime      @default(now())
+
+  @@index([status])
+  @@index([companyId, createdAt])
+}
+
+// ───────────── Abonnements et paiements ─────────────
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+enum PaymentMethod {
+  ORANGE_MONEY
+  MOOV_MONEY
+  CARD
+  BANK_TRANSFER
+  CASH
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+// Offres, modifiables par l'administrateur KTZ
+model Plan {
+  id                 String  @id @default(cuid())
+  code               String  @unique
+  name               String
+  priceXaf           Int
+  periodMonths       Int     @default(1)
+  candidatesPerMonth Int?
+  oralEnabled        Boolean @default(false)
+  webcamEnabled      Boolean @default(false)
+  active             Boolean @default(true)
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id                  String             @id @default(cuid())
+  companyId           String
+  company             Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  planId              String
+  plan                Plan               @relation(fields: [planId], references: [id])
+  status              SubscriptionStatus @default(ACTIVE)
+  periodStart         DateTime
+  periodEnd           DateTime
+  activatedManuallyBy String? // administrateur KTZ (virement, espèces)
+  createdAt           DateTime           @default(now())
+
+  payments Payment[]
+
+  @@index([companyId, status])
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  companyId      String
+  company        Company       @relation(fields: [companyId], references: [id])
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  amountXaf      Int
+  method         PaymentMethod
+  provider       String? // agrégateur de paiement
+  transactionRef String?       @unique
+  status         PaymentStatus @default(PENDING)
+  invoiceNumber  String?       @unique
+  invoiceUrl     String?
+  paidAt         DateTime?
+  createdAt      DateTime      @default(now())
+
+  @@index([companyId])
+}
+
+// ───────────── API, webhooks, consommation IA ─────────────
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  companyId  String
+  company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name       String
+  prefix     String // début visible de la clé
+  keyHash    String    @unique // la clé n'est jamais stockée en clair
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([companyId])
+}
+
+model Webhook {
+  id              String   @id @default(cuid())
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  url             String
+  secretEncrypted String // pour signer les envois
+  events          String[] // attempt.completed, scores.ready…
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  deliveries WebhookDelivery[]
+
+  @@index([companyId])
+}
+
+// « Derniers appels » d'un webhook
+model WebhookDelivery {
+  id         String   @id @default(cuid())
+  webhookId  String
+  webhook    Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  event      String
+  payload    Json
+  statusCode Int?
+  success    Boolean  @default(false)
+  tries      Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([webhookId, createdAt])
+}
+
+enum AiOperation {
+  GENERATION
+  REGENERATION
+  GRADING
+  TRANSCRIPTION
+}
+
+model AiUsage {
+  id                 String      @id @default(cuid())
+  companyId          String?
+  company            Company?    @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  operation          AiOperation
+  provider           String // anthropic, secours…
+  model              String
+  inputTokens        Int?
+  outputTokens       Int?
+  audioSeconds       Int?
+  estimatedCostMicro Int // coût estimé, en millionièmes de dollar
+  success            Boolean
+  error              String?
+  durationMs         Int?
+  createdAt          DateTime    @default(now())
+
+  @@index([companyId, createdAt])
+}

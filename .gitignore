@@ -1,6 +1,29 @@
-node_modules/
-.next/
-.env
-.env.local
-.env*.local
-.vercel/
+# dépendances
+/node_modules
+/.pnp
+.pnp.*
+
+# tests
+/coverage
+
+# next.js
+/.next/
+/out/
+/build
+
+# divers
+.DS_Store
+*.pem
+npm-debug.log*
+*.tsbuildinfo
+next-env.d.ts
+
+# fichiers de secrets (jamais commités) — seul .env.example l'est
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# prisma (client généré)
+/src/generated/
