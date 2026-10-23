@@ -365,6 +365,7 @@ model Attempt {
   invitation         Invitation      @relation(fields: [invitationId], references: [id], onDelete: Cascade)
   questionOrder      Json // [{ questionId, choiceOrder }] tirées et mélangées
   currentIndex       Int             @default(0)
+  questionStartedAt  DateTime? // affichage de la question en cours (chronomètre par question)
   startedAt          DateTime        @default(now())
   endsAt             DateTime // chronomètre global, côté serveur
   completedAt        DateTime?

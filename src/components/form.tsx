@@ -83,19 +83,18 @@ export function ActionButton({
 }
 
 export function FormMessage({ state }: { state: FormState }) {
-  if (state?.message) {
-    return (
-      <p role="alert" className="whitespace-pre-line rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">
-        {state.message}
-      </p>
-    );
-  }
-  if (state?.success) {
-    return (
-      <p role="status" className="rounded-md bg-teal-50 px-3 py-2 text-sm text-teal-900">
-        {state.success}
-      </p>
-    );
-  }
-  return null;
+  return (
+    <>
+      {state?.success && (
+        <p role="status" className="rounded-md bg-teal-50 px-3 py-2 text-sm text-teal-900">
+          {state.success}
+        </p>
+      )}
+      {state?.message && (
+        <p role="alert" className="whitespace-pre-line rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">
+          {state.message}
+        </p>
+      )}
+    </>
+  );
 }

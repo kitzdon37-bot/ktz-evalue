@@ -31,7 +31,11 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]">) {
       {publie && (
         <div className="mb-4">
           <Notice tone="success">
-            Le test est publié. L&apos;envoi des invitations aux candidats arrive à la prochaine étape du projet.
+            Le test est publié. Vous pouvez maintenant{" "}
+            <Link href={`/tests/${id}/inviter`} className="font-semibold underline">
+              inviter des candidats
+            </Link>
+            .
           </Notice>
         </div>
       )}
@@ -73,9 +77,14 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]">) {
             </>
           )}
           {test.status !== "DRAFT" && (
-            <Link href={`/tests/${id}/apercu`} className={`${btn.secondary} w-full`}>
-              Aperçu candidat
-            </Link>
+            <>
+              <Link href={`/tests/${id}/inviter`} className={`${btn.primary} w-full`}>
+                {test.status === "PUBLISHED" && editable ? "Inviter des candidats" : "Suivi des candidats"}
+              </Link>
+              <Link href={`/tests/${id}/apercu`} className={`${btn.secondary} w-full`}>
+                Aperçu candidat
+              </Link>
+            </>
           )}
           {editable && (
             <form action={duplicateTest.bind(null, id)}>

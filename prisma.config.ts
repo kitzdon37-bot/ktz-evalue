@@ -16,5 +16,7 @@ export default defineConfig({
     // Les migrations passent par la connexion directe (DIRECT_URL) ;
     // le site, lui, utilise la connexion mutualisée (DATABASE_URL, voir src/lib/db.ts).
     url: process.env.DIRECT_URL ?? process.env.DATABASE_URL,
+    // Base temporaire pour préparer les migrations (en local seulement).
+    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
   },
 });
