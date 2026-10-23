@@ -5,8 +5,10 @@ Plateforme de tests de recrutement générés par IA. Voir `CAHIER_DES_CHARGES.m
 ## Lancer le site sur son ordinateur
 
 1. Copier `.env.example` en `.env.local` et le remplir.
+   Pour développer sans Supabase : `npx prisma dev --name ktz-evalue --detach` lance une base
+   locale gratuite ; mettre l'adresse `postgres://…` qu'elle affiche dans `DATABASE_URL` et `DIRECT_URL`.
 2. `npm install`
-3. `npm run db:deploy` (crée les tables dans la base Supabase, une seule fois)
+3. `npm run db:deploy` (crée les tables dans la base, une seule fois)
 4. `npm run dev`, puis ouvrir http://localhost:3000
 
 ## Commandes utiles
