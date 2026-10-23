@@ -3,6 +3,13 @@ import { Suspense } from "react";
 import { getCurrentUser } from "@/lib/auth/session";
 import { logout } from "../(auth)/actions";
 
+const NAV = [
+  { href: "/tableau-de-bord", label: "Tableau de bord" },
+  { href: "/tests", label: "Tests" },
+  { href: "/bibliotheque", label: "Bibliothèque" },
+  { href: "/entreprise", label: "Entreprise" },
+];
+
 // En-tête de l'espace recruteur. La partie qui dépend de l'utilisateur connecté
 // est chargée à part (Suspense) pour que le reste de la page s'affiche tout de suite.
 async function UserMenu() {
@@ -10,7 +17,7 @@ async function UserMenu() {
   if (!user) return null;
   return (
     <div className="flex items-center gap-3 text-sm">
-      <span className="hidden text-gray-700 sm:inline">
+      <span className="hidden text-gray-700 md:inline">
         {user.name}
         {user.companyName && <span className="text-gray-500"> · {user.companyName}</span>}
       </span>
@@ -35,6 +42,18 @@ export default function RecruiterLayout({ children }: { children: React.ReactNod
             <UserMenu />
           </Suspense>
         </div>
+        <nav className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-2 pb-2 text-sm">
+          {NAV.map((n) => (
+            <Link
+              key={n.href}
+              href={n.href}
+              prefetch={false}
+              className="whitespace-nowrap rounded-md px-3 py-2 font-medium text-gray-700 hover:bg-gray-100"
+            >
+              {n.label}
+            </Link>
+          ))}
+        </nav>
       </header>
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">{children}</main>
     </div>

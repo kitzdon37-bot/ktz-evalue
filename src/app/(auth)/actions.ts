@@ -7,7 +7,9 @@ import { afterFailedLogin, isLocked } from "@/lib/auth/lockout";
 import { createSession, deleteSession, getCurrentUser } from "@/lib/auth/session";
 import { consumeAuthToken, issueAuthToken } from "@/lib/auth/auth-tokens";
 import { appUrl, linkEmail, sendEmail } from "@/lib/email";
+import { hashToken } from "@/lib/auth/tokens";
 import {
+  AcceptInvitationSchema,
   EmailSchema,
   LoginSchema,
   ResetPasswordSchema,
@@ -213,6 +215,49 @@ export async function resetPassword(_state: FormState, formData: FormData): Prom
     db.session.deleteMany({ where: { userId } }),
   ]);
   await createSession(userId);
+  redirect("/tableau-de-bord");
+}
+
+// Un membre invité crée son compte depuis le lien reçu par email.
+export async function acceptInvitation(_state: FormState, formData: FormData): Promise<FormState> {
+  const parsed = AcceptInvitationSchema.safeParse({
+    token: formData.get("token"),
+    name: formData.get("name"),
+    password: formData.get("password"),
+  });
+  if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
+  const { token, name, password } = parsed.data;
+
+  const invitation = await db.teamInvitation.findUnique({ where: { tokenHash: hashToken(token) } });
+  if (!invitation || invitation.acceptedAt || invitation.expiresAt < new Date()) {
+    return { message: "Cette invitation n'est plus valable. Demandez une nouvelle invitation à votre responsable." };
+  }
+  if (await db.user.findUnique({ where: { email: invitation.email }, select: { id: true } })) {
+    return { message: "Un compte existe déjà avec cette adresse. Connectez-vous." };
+  }
+  const passwordHash = await hashPassword(password);
+  const user = await db.$transaction(async (tx) => {
+    // Mise à jour conditionnelle : l'invitation ne peut servir qu'une fois.
+    const { count } = await tx.teamInvitation.updateMany({
+      where: { id: invitation.id, acceptedAt: null },
+      data: { acceptedAt: new Date() },
+    });
+    if (count !== 1) return null;
+    return tx.user.create({
+      data: {
+        name,
+        email: invitation.email,
+        passwordHash,
+        role: invitation.role,
+        companyId: invitation.companyId,
+        // Le lien reçu par email prouve que l'adresse est valide.
+        emailVerifiedAt: new Date(),
+      },
+      select: { id: true },
+    });
+  });
+  if (!user) return { message: "Cette invitation a déjà été utilisée." };
+  await createSession(user.id);
   redirect("/tableau-de-bord");
 }
 

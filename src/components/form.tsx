@@ -55,10 +55,37 @@ export function SubmitButton({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Bouton d'envoi avec un nom/valeur (pour distinguer plusieurs actions dans un formulaire)
+// et un texte d'attente personnalisable.
+export function ActionButton({
+  children,
+  className,
+  name,
+  value,
+  pendingText = "Veuillez patienter…",
+  disabled,
+}: {
+  children: React.ReactNode;
+  className: string;
+  name?: string;
+  value?: string;
+  pendingText?: string;
+  disabled?: boolean;
+}) {
+  const { pending, data } = useFormStatus();
+  // Le texte d'attente ne s'affiche que sur le bouton cliqué.
+  const isMine = pending && (!name || data?.get(name) === value);
+  return (
+    <button type="submit" name={name} value={value} disabled={pending || disabled} className={className}>
+      {isMine ? pendingText : children}
+    </button>
+  );
+}
+
 export function FormMessage({ state }: { state: FormState }) {
   if (state?.message) {
     return (
-      <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">
+      <p role="alert" className="whitespace-pre-line rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">
         {state.message}
       </p>
     );

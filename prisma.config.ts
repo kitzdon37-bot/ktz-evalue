@@ -9,6 +9,8 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
+    // Modèles de la bibliothèque de tests.
+    seed: "node prisma/seed/seed.mjs",
   },
   datasource: {
     // Les migrations passent par la connexion directe (DIRECT_URL) ;

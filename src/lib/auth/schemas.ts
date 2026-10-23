@@ -37,6 +37,12 @@ export const ResetPasswordSchema = z.object({
   password,
 });
 
+export const AcceptInvitationSchema = z.object({
+  token: z.string().min(10).max(200),
+  name: z.string().trim().min(2, { error: "Indiquez votre nom (2 caractères minimum)." }).max(100),
+  password,
+});
+
 export type FormState =
   | {
       errors?: Record<string, string[] | undefined>;

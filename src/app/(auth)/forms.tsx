@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { Field, FormMessage, SubmitButton } from "@/components/form";
 import {
+  acceptInvitation,
   confirmMagicLink,
   login,
   requestMagicLink,
@@ -86,6 +87,29 @@ export function ForgotPasswordForm() {
       <FormMessage state={state} />
       <Field label="Email" name="email" type="email" autoComplete="email" errors={state?.errors?.email} />
       <SubmitButton>Recevoir un lien</SubmitButton>
+    </form>
+  );
+}
+
+export function AcceptInvitationForm({ token, email }: { token: string; email: string }) {
+  const [state, action] = useActionState(acceptInvitation, undefined);
+  return (
+    <form action={action} className="space-y-4">
+      <FormMessage state={state} />
+      <input type="hidden" name="token" value={token} />
+      <p className="text-sm text-gray-700">
+        Compte : <strong>{email}</strong>
+      </p>
+      <Field label="Votre nom" name="name" autoComplete="name" errors={state?.errors?.name} />
+      <Field
+        label="Mot de passe"
+        name="password"
+        type="password"
+        autoComplete="new-password"
+        errors={state?.errors?.password}
+        hint={PASSWORD_HINT}
+      />
+      <SubmitButton>Rejoindre l&apos;équipe</SubmitButton>
     </form>
   );
 }
