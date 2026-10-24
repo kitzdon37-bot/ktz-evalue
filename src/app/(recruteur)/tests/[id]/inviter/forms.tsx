@@ -21,7 +21,7 @@ export function InviteCandidatesForm({ testId }: { testId: string }) {
           className={`${input} mt-1 font-mono text-sm`}
           placeholder={"Marie Yakité ; marie@exemple.cf ; 75 12 34 56\nJean Ndomaté ; ; +236 72 00 00 00"}
         />
-        <p className="mt-1 text-sm text-gray-600">L&apos;email ou le téléphone suffit. Les numéros à 8 chiffres sont considérés comme centrafricains (+236).</p>
+        <p className="mt-1 text-sm text-stone-600">L&apos;email ou le téléphone suffit. Les numéros à 8 chiffres sont considérés comme centrafricains (+236).</p>
       </div>
       <div>
         <label htmlFor="file" className={label}>
@@ -80,8 +80,8 @@ export function PublicLinkForm({
   return (
     <div className="space-y-3">
       {url && (
-        <div className="space-y-2 rounded-md bg-gray-50 p-3">
-          <p className="break-all font-mono text-sm text-gray-900">{url}</p>
+        <div className="space-y-2 rounded-md bg-stone-50 p-3">
+          <p className="break-all font-mono text-sm text-stone-900">{url}</p>
           <div className="flex flex-wrap gap-2">
             <CopyButton text={url} />
             <a
@@ -93,7 +93,7 @@ export function PublicLinkForm({
               Partager sur WhatsApp
             </a>
           </div>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-stone-600">
             {used} candidat(s) inscrit(s) par ce lien{max ? ` sur ${max} maximum` : ""}.
           </p>
         </div>

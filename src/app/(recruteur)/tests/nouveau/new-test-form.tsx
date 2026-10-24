@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Sparkles } from "lucide-react";
 import { ActionButton, FormMessage } from "@/components/form";
 import { btn, Card, input, label, Notice } from "@/components/ui";
 import {
@@ -13,6 +14,26 @@ import {
   QUESTION_TYPES,
 } from "@/lib/tests/model";
 import { createTest } from "../actions";
+
+// Groupe de choix en « pastilles » (boutons radio stylés).
+function ChoiceGroup({ legend, name, options, defaultValue }: { legend: string; name: string; options: string[][]; defaultValue: string }) {
+  return (
+    <fieldset>
+      <legend className={label}>{legend}</legend>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {options.map(([value, text]) => (
+          <label
+            key={value}
+            className="cursor-pointer rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:border-stone-300 has-[:checked]:border-brand-600 has-[:checked]:bg-brand-700 has-[:checked]:text-white has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-brand-500/20"
+          >
+            <input type="radio" name={name} value={value} defaultChecked={value === defaultValue} className="sr-only" />
+            {text}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
 
 function Errors({ list }: { list?: string[] }) {
   return list?.map((e) => (
@@ -29,12 +50,12 @@ export function NewTestForm({ aiAvailable }: { aiAvailable: boolean }) {
   return (
     <form action={action} className="space-y-5">
       <FormMessage state={state} />
-      <Card className="space-y-5">
+      <Card className="space-y-6">
         <div>
           <label htmlFor="jobTitle" className={label}>
             Intitulé du poste
           </label>
-          <input id="jobTitle" name="jobTitle" required className={`${input} mt-1`} placeholder="Ex. : Comptable confirmé" />
+          <input id="jobTitle" name="jobTitle" required className={`${input} mt-2`} placeholder="Ex. : Comptable confirmé" />
           <Errors list={errors?.jobTitle} />
         </div>
         <div>
@@ -45,63 +66,24 @@ export function NewTestForm({ aiAvailable }: { aiAvailable: boolean }) {
             id="jobDescription"
             name="jobDescription"
             rows={8}
-            className={`${input} mt-1`}
+            className={`${input} mt-2`}
             placeholder="Collez ici le texte de l'offre, ou décrivez les missions et les compétences attendues."
           />
           <Errors list={errors?.jobDescription} />
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2">
+          <ChoiceGroup legend="Niveau" name="level" defaultValue="CONFIRMED" options={LEVELS.map((l) => [l, LEVEL_LABELS[l]])} />
+          <ChoiceGroup legend="Langue du test" name="language" defaultValue="FR" options={LANGUAGES.map((l) => [l, LANGUAGE_LABELS[l]])} />
           <div>
-            <label htmlFor="level" className={label}>
-              Niveau
-            </label>
-            <select id="level" name="level" defaultValue="CONFIRMED" className={`${input} mt-1`}>
-              {LEVELS.map((l) => (
-                <option key={l} value={l}>
-                  {LEVEL_LABELS[l]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="language" className={label}>
-              Langue du test
-            </label>
-            <select id="language" name="language" defaultValue="FR" className={`${input} mt-1`}>
-              {LANGUAGES.map((l) => (
-                <option key={l} value={l}>
-                  {LANGUAGE_LABELS[l]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="durationMinutes" className={label}>
-              Durée totale
-            </label>
-            <select id="durationMinutes" name="durationMinutes" defaultValue="30" className={`${input} mt-1`}>
-              {DURATIONS.map((d) => (
-                <option key={d} value={d}>
-                  {d} minutes
-                </option>
-              ))}
-            </select>
+            <ChoiceGroup legend="Durée totale" name="durationMinutes" defaultValue="30" options={DURATIONS.map((d) => [String(d), `${d} min`])} />
             <Errors list={errors?.durationMinutes} />
           </div>
           <div>
             <label htmlFor="questionCount" className={label}>
-              Nombre de questions (10 à 30)
+              Nombre de questions <span className="font-normal text-stone-500">(10 à 30)</span>
             </label>
-            <input
-              id="questionCount"
-              name="questionCount"
-              type="number"
-              min={10}
-              max={30}
-              defaultValue={15}
-              className={`${input} mt-1`}
-            />
+            <input id="questionCount" name="questionCount" type="number" min={10} max={30} defaultValue={15} className={`${input} mt-2`} />
             <Errors list={errors?.questionCount} />
           </div>
         </div>
@@ -110,8 +92,11 @@ export function NewTestForm({ aiAvailable }: { aiAvailable: boolean }) {
           <legend className={label}>Types de questions</legend>
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             {QUESTION_TYPES.map((t) => (
-              <label key={t} className="flex items-center gap-3 rounded-md border border-gray-200 px-3 py-2.5 text-sm">
-                <input type="checkbox" name="questionTypes" value={t} defaultChecked={t !== "ORAL"} className="h-5 w-5" />
+              <label
+                key={t}
+                className="flex cursor-pointer items-center gap-3 rounded-xl border border-stone-200 bg-white px-3.5 py-3 text-sm font-medium text-stone-800 transition hover:border-stone-300 has-[:checked]:border-brand-400 has-[:checked]:bg-brand-50 has-[:checked]:text-brand-950"
+              >
+                <input type="checkbox" name="questionTypes" value={t} defaultChecked={t !== "ORAL"} className="h-5 w-5 accent-brand-700" />
                 {QUESTION_TYPE_LABELS[t]}
               </label>
             ))}
@@ -132,12 +117,12 @@ export function NewTestForm({ aiAvailable }: { aiAvailable: boolean }) {
           name="mode"
           value="ai"
           disabled={!aiAvailable}
-          className={btn.primary}
+          className={`${btn.primary} px-5 py-3`}
           pendingText="L'IA analyse le poste (jusqu'à une minute)…"
         >
-          Proposer les compétences avec l&apos;IA
+          <Sparkles className="h-4 w-4" /> Proposer les compétences avec l&apos;IA
         </ActionButton>
-        <ActionButton name="mode" value="manual" className={btn.secondary}>
+        <ActionButton name="mode" value="manual" className={`${btn.secondary} px-5 py-3`}>
           Continuer sans IA
         </ActionButton>
       </div>

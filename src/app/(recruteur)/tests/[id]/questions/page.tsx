@@ -7,7 +7,7 @@ import { fromDb, getCompanyTest } from "@/lib/tests/repository";
 import { isAiConfigured } from "@/lib/ai";
 import { checkQuestion, questionPlan, QUESTION_TYPE_LABELS, type QuestionType } from "@/lib/tests/model";
 import { ActionButton } from "@/components/form";
-import { BackLink, btn, Card, input, Notice, PageTitle } from "@/components/ui";
+import { BackLink, btn, Card, input, Notice, PageTitle , Loading } from "@/components/ui";
 import { addQuestion } from "../../actions";
 import { TestSteps } from "../steps";
 import { QuestionEditor } from "./question-editor";
@@ -63,7 +63,7 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/question
           </Notice>
         )}
         <Card className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-stone-700">
             <strong>{mainCount}</strong> question(s) posée(s) sur <strong>{test.questionCount}</strong> attendues ·{" "}
             <strong>{reserveCount}</strong> en réserve
           </p>
@@ -74,8 +74,8 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/question
       <div className="space-y-8">
         {test.skills.map((skill, si) => (
           <section key={skill.id}>
-            <h2 className="mb-3 text-lg font-semibold text-gray-900">
-              {skill.name} <span className="text-sm font-normal text-gray-600">· {skill.weight} % · {skill.questions.length}/{plan[si].total} questions</span>
+            <h2 className="mb-3 text-lg font-semibold text-stone-900">
+              {skill.name} <span className="text-sm font-normal text-stone-600">· {skill.weight} % · {skill.questions.length}/{plan[si].total} questions</span>
             </h2>
             <div className="space-y-3">
               {skill.questions.map((q, i) => {
@@ -119,7 +119,7 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/question
 
 export default function QuestionsPage(props: PageProps<"/tests/[id]/questions">) {
   return (
-    <Suspense fallback={<p className="text-gray-600">Chargement…</p>}>
+    <Suspense fallback={<Loading />}>
       <Content {...props} />
     </Suspense>
   );

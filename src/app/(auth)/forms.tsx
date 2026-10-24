@@ -97,7 +97,7 @@ export function AcceptInvitationForm({ token, email }: { token: string; email: s
     <form action={action} className="space-y-4">
       <FormMessage state={state} />
       <input type="hidden" name="token" value={token} />
-      <p className="text-sm text-gray-700">
+      <p className="text-sm text-stone-700">
         Compte : <strong>{email}</strong>
       </p>
       <Field label="Votre nom" name="name" autoComplete="name" errors={state?.errors?.name} />

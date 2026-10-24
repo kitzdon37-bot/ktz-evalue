@@ -18,9 +18,9 @@ async function Content({ searchParams }: { searchParams: PageProps<"/rejoindre">
       : null;
   if (!invitation || invitation.acceptedAt || invitation.expiresAt < new Date()) {
     return (
-      <p className="text-sm text-gray-700">
+      <p className="text-sm text-stone-700">
         Cette invitation n&apos;est plus valable. Demandez une nouvelle invitation à votre responsable, ou{" "}
-        <Link href="/connexion" className="text-teal-800 underline">
+        <Link href="/connexion" className="font-semibold text-brand-700 hover:text-brand-800 hover:underline">
           connectez-vous
         </Link>
         .
@@ -29,7 +29,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/rejoindre">
   }
   return (
     <>
-      <p className="mb-6 text-sm text-gray-600">
+      <p className="mb-6 text-sm text-stone-600">
         Vous êtes invité(e) à rejoindre l&apos;équipe de recrutement de <strong>{invitation.company.name}</strong>.
       </p>
       <AcceptInvitationForm token={jeton as string} email={invitation.email} />
@@ -40,7 +40,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/rejoindre">
 export default function JoinPage(props: PageProps<"/rejoindre">) {
   return (
     <>
-      <h1 className="mb-1 text-xl font-bold text-gray-900">Rejoindre l&apos;équipe</h1>
+      <h1 className="mb-1 text-2xl font-extrabold tracking-tight text-stone-900">Rejoindre l&apos;équipe</h1>
       <Suspense>
         <Content searchParams={props.searchParams} />
       </Suspense>

@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { requireEditor } from "@/lib/tenant";
 import { getCompanyTest } from "@/lib/tests/repository";
 import { isAiConfigured } from "@/lib/ai";
-import { BackLink, Notice, PageTitle } from "@/components/ui";
+import { BackLink, Notice, PageTitle , Loading } from "@/components/ui";
 import { TestSteps } from "../steps";
 import { SkillsForm } from "./skills-form";
 
@@ -46,7 +46,7 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/competen
 
 export default function SkillsPage(props: PageProps<"/tests/[id]/competences">) {
   return (
-    <Suspense fallback={<p className="text-gray-600">Chargement…</p>}>
+    <Suspense fallback={<Loading />}>
       <Content {...props} />
     </Suspense>
   );

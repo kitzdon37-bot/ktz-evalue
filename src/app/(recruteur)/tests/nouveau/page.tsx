@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { requireEditor } from "@/lib/tenant";
 import { isAiConfigured } from "@/lib/ai";
-import { BackLink, PageTitle } from "@/components/ui";
+import { BackLink, PageTitle , Loading } from "@/components/ui";
 import { NewTestForm } from "./new-test-form";
 
 export const metadata: Metadata = { title: "Nouveau test" };
@@ -20,16 +20,17 @@ export default function NewTestPage() {
     <>
       <BackLink href="/tests">Tests</BackLink>
       <PageTitle
-        title="Nouveau test — étape 1 sur 3"
-        subtitle="Décrivez le poste. Vous relirez et validerez tout avant l'envoi aux candidats."
+        eyebrow="Nouveau test · étape 1 sur 3"
+        title="Décrivez le poste"
+        subtitle="Vous relirez et validerez tout avant l'envoi aux candidats."
       />
-      <p className="mb-4 text-sm text-gray-700">
+      <p className="mb-4 text-sm text-stone-700">
         Vous préférez partir d&apos;un test prêt à l&apos;emploi ?{" "}
-        <Link href="/bibliotheque" className="font-semibold text-teal-800 underline">
+        <Link href="/bibliotheque" className="font-semibold text-brand-800 underline">
           Choisir un modèle dans la bibliothèque
         </Link>
       </p>
-      <Suspense fallback={<p className="text-gray-600">Chargement…</p>}>
+      <Suspense fallback={<Loading />}>
         <Content />
       </Suspense>
     </>

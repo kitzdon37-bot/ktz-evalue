@@ -1,29 +1,45 @@
 import Link from "next/link";
+import { Eye } from "lucide-react";
 
 const STEPS = [
-  { key: "competences", label: "1. Compétences" },
-  { key: "questions", label: "2. Questions" },
-  { key: "parametres", label: "3. Paramètres" },
-  { key: "apercu", label: "Aperçu" },
+  { key: "competences", label: "Compétences", n: 1 },
+  { key: "questions", label: "Questions", n: 2 },
+  { key: "parametres", label: "Paramètres", n: 3 },
+  { key: "apercu", label: "Aperçu", n: 0 },
 ] as const;
 
 // Navigation entre les étapes d'un test en brouillon.
 export function TestSteps({ testId, current }: { testId: string; current: (typeof STEPS)[number]["key"] }) {
+  const currentIndex = STEPS.findIndex((s) => s.key === current);
   return (
-    <nav className="mb-6 flex gap-1 overflow-x-auto border-b border-gray-200 text-sm" aria-label="Étapes du test">
-      {STEPS.map((s) => (
-        <Link
-          key={s.key}
-          href={`/tests/${testId}/${s.key}`}
-          prefetch={false}
-          aria-current={s.key === current ? "page" : undefined}
-          className={`whitespace-nowrap border-b-2 px-3 py-2 font-medium ${
-            s.key === current ? "border-teal-700 text-teal-800" : "border-transparent text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          {s.label}
-        </Link>
-      ))}
+    <nav className="mb-8 overflow-x-auto" aria-label="Étapes du test">
+      <ol className="flex min-w-max items-center gap-2 rounded-2xl border border-stone-200/80 bg-white p-1.5 shadow-soft">
+        {STEPS.map((s, i) => {
+          const active = s.key === current;
+          const done = s.n > 0 && i < currentIndex;
+          return (
+            <li key={s.key} className="flex-1">
+              <Link
+                href={`/tests/${testId}/${s.key}`}
+                prefetch={false}
+                aria-current={active ? "step" : undefined}
+                className={`flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                  active ? "bg-brand-700 text-white shadow-sm" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+                }`}
+              >
+                <span
+                  className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${
+                    active ? "bg-white/20 text-white" : done ? "bg-brand-100 text-brand-800" : "bg-stone-100 text-stone-600"
+                  }`}
+                >
+                  {s.n > 0 ? (done ? "✓" : s.n) : <Eye className="h-3.5 w-3.5" />}
+                </span>
+                {s.label}
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
     </nav>
   );
 }

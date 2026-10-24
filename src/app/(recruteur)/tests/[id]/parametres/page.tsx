@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { requireEditor } from "@/lib/tenant";
 import { getCompanyTest } from "@/lib/tests/repository";
-import { BackLink, PageTitle } from "@/components/ui";
+import { BackLink, PageTitle , Loading } from "@/components/ui";
 import { TestSteps } from "../steps";
 import { SettingsForm } from "./settings-form";
 
@@ -48,7 +48,7 @@ async function Content({ params }: PageProps<"/tests/[id]/parametres">) {
 
 export default function SettingsPage(props: PageProps<"/tests/[id]/parametres">) {
   return (
-    <Suspense fallback={<p className="text-gray-600">Chargement…</p>}>
+    <Suspense fallback={<Loading />}>
       <Content {...props} />
     </Suspense>
   );

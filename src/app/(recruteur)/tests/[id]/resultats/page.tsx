@@ -4,7 +4,8 @@ import { Suspense } from "react";
 import { requireCompany } from "@/lib/tenant";
 import { getTestResults, RECRUITER_STATUS_LABELS, sortRows } from "@/lib/results-view";
 import { GlobalScore, ReliabilityBadge, ScoreBar } from "@/components/results";
-import { BackLink, btn, Card, PageTitle } from "@/components/ui";
+import { BackLink, btn, EmptyState, Loading, PageTitle } from "@/components/ui";
+import { Columns3, FileDown, FileSpreadsheet, Trophy } from "lucide-react";
 
 export const metadata: Metadata = { title: "Résultats" };
 
@@ -39,35 +40,35 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/resultat
         action={
           <div className="flex gap-2">
             <a href={`/tests/${id}/export?format=csv`} className={btn.secondary}>
-              Export CSV
+              <FileDown className="h-4 w-4" /> CSV
             </a>
             <a href={`/tests/${id}/export?format=xlsx`} className={btn.secondary}>
-              Export Excel
+              <FileSpreadsheet className="h-4 w-4" /> Excel
             </a>
           </div>
         }
       />
 
-      <div className="mb-4 flex flex-col gap-3 text-sm sm:flex-row sm:flex-wrap sm:items-center">
-        <span className="font-medium text-gray-700">Trier par :</span>
+      <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-stone-200/80 bg-white p-4 text-sm shadow-soft sm:flex-row sm:flex-wrap sm:items-center">
+        <span className="font-bold text-stone-900">Trier par</span>
         <div className="flex flex-wrap gap-1">
           {sortOptions.map((o) => (
             <Link
               key={o.key}
               href={link({ tri: o.key })}
-              className={`rounded-full border px-3 py-1 ${sort === o.key ? "border-teal-700 bg-teal-50 text-teal-900" : "border-gray-300 bg-white text-gray-700"}`}
+              className={`rounded-full px-3 py-1.5 font-semibold transition ${sort === o.key ? "bg-brand-700 text-white shadow-sm" : "bg-stone-100 text-stone-700 hover:bg-stone-200"}`}
             >
               {o.label}
             </Link>
           ))}
         </div>
-        <span className="font-medium text-gray-700 sm:ml-4">Statut :</span>
+        <span className="font-bold text-stone-900 sm:ml-4">Statut</span>
         <div className="flex flex-wrap gap-1">
           {[["", "Tous"], ...Object.entries(RECRUITER_STATUS_LABELS)].map(([k, l]) => (
             <Link
               key={k}
               href={link({ statut: k })}
-              className={`rounded-full border px-3 py-1 ${statusFilter === k ? "border-teal-700 bg-teal-50 text-teal-900" : "border-gray-300 bg-white text-gray-700"}`}
+              className={`rounded-full px-3 py-1.5 font-semibold transition ${statusFilter === k ? "bg-brand-700 text-white shadow-sm" : "bg-stone-100 text-stone-700 hover:bg-stone-200"}`}
             >
               {l}
             </Link>
@@ -76,17 +77,22 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/resultat
       </div>
 
       {filtered.length === 0 ? (
-        <Card className="text-center text-sm text-gray-600">
-          Aucun résultat pour le moment.{" "}
-          <Link href={`/tests/${id}/inviter`} className="text-teal-800 underline">
-            Inviter des candidats
-          </Link>
-        </Card>
+        <EmptyState
+          icon={Trophy}
+          title="Aucun résultat pour le moment"
+          action={
+            <Link href={`/tests/${id}/inviter`} className={btn.primary}>
+              Inviter des candidats
+            </Link>
+          }
+        >
+          Le classement s&apos;affichera dès que vos candidats auront terminé le test.
+        </EmptyState>
       ) : (
         <form action={`/tests/${id}/comparer`} method="get">
           <ol className="space-y-3">
             {filtered.map((r, i) => (
-              <li key={r.id} className="rounded-lg border border-gray-200 bg-white p-4">
+              <li key={r.id} className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-soft transition hover:shadow-lift">
                 <div className="flex flex-wrap items-start gap-3">
                   <input
                     type="checkbox"
@@ -94,14 +100,24 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/resultat
                     value={r.id}
                     disabled={!r.finished}
                     aria-label={`Comparer ${r.name}`}
-                    className="mt-1.5 h-5 w-5"
+                    className="mt-2.5 h-5 w-5 accent-brand-700"
                   />
-                  <span className="mt-1 w-6 text-sm font-semibold text-gray-500">{sort === "score" && r.globalScore !== null ? i + 1 : ""}</span>
+                  <span
+                    className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-extrabold ${
+                      sort === "score" && r.globalScore !== null
+                        ? i === 0
+                          ? "bg-gradient-to-br from-sun-300 to-sun-500 text-stone-900 shadow-sm"
+                          : "bg-brand-50 text-brand-800 ring-1 ring-brand-100"
+                        : "bg-stone-100 text-stone-600"
+                    }`}
+                  >
+                    {sort === "score" && r.globalScore !== null ? i + 1 : r.name.slice(0, 1).toUpperCase()}
+                  </span>
                   <div className="min-w-0 flex-1">
-                    <Link href={`/tests/${id}/resultats/${r.id}`} className="font-semibold text-gray-900 underline">
+                    <Link href={`/tests/${id}/resultats/${r.id}`} className="text-base font-bold text-stone-900 hover:text-brand-700">
                       {r.name}
                     </Link>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-stone-600">
                       {r.finished
                         ? `Terminé le ${r.completedAt?.toLocaleDateString("fr-FR", { timeZone: "Africa/Bangui" })}${r.status === "TIMED_OUT" ? " (temps écoulé)" : ""}`
                         : "Test en cours"}{" "}
@@ -116,7 +132,7 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/resultat
                   </div>
                 </div>
                 {r.finished && (
-                  <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="mt-4 grid gap-3 border-t border-stone-100 pt-4 sm:grid-cols-2 lg:grid-cols-3">
                     {r.skillScores.map((s) => (
                       <ScoreBar key={s.id} label={s.name} score={s.score} />
                     ))}
@@ -125,11 +141,11 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/resultat
               </li>
             ))}
           </ol>
-          <div className="sticky bottom-0 mt-4 flex items-center gap-3 border-t border-gray-200 bg-gray-50 py-3">
+          <div className="sticky bottom-4 mt-6 flex items-center gap-3 rounded-2xl border border-stone-200/80 bg-white/90 px-4 py-3 shadow-lift backdrop-blur">
             <button type="submit" className={btn.primary}>
-              Comparer la sélection
+              <Columns3 className="h-4 w-4" /> Comparer la sélection
             </button>
-            <span className="text-sm text-gray-600">Cochez 2 à 4 candidats.</span>
+            <span className="text-sm text-stone-600">Cochez 2 à 4 candidats.</span>
           </div>
         </form>
       )}
@@ -139,7 +155,7 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/resultat
 
 export default function ResultsPage(props: PageProps<"/tests/[id]/resultats">) {
   return (
-    <Suspense fallback={<p className="text-gray-600">Chargement…</p>}>
+    <Suspense fallback={<Loading />}>
       <Content {...props} />
     </Suspense>
   );

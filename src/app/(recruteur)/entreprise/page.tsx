@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { requireCompany } from "@/lib/tenant";
 import { ROLE_LABELS } from "@/lib/tests/model";
 import { ActionButton } from "@/components/form";
-import { btn, Card, PageTitle } from "@/components/ui";
+import { btn, Card, PageTitle , Loading } from "@/components/ui";
 import { cancelInvitation, changeRole, removeMember } from "./actions";
 import { CompanyForm, InviteForm } from "./forms";
 
@@ -35,10 +35,10 @@ async function Content() {
 
   return (
     <>
-      <PageTitle title="Entreprise et équipe" subtitle="Ces informations sont visibles par les candidats au début du test." />
+      <PageTitle eyebrow="Paramètres" title="Entreprise et équipe" subtitle="Ces informations sont visibles par les candidats au début du test." />
       <div className="space-y-6">
         <Card>
-          <h2 className="mb-4 font-semibold text-gray-900">Fiche entreprise</h2>
+          <h2 className="mb-4 text-base font-bold text-stone-900">Fiche entreprise</h2>
           <CompanyForm
             readOnly={!isOwner}
             values={{
@@ -49,25 +49,25 @@ async function Content() {
               primaryColor: company.primaryColor ?? "",
             }}
           />
-          <p className="mt-4 text-sm text-gray-600">Le logo pourra être ajouté quand le stockage des fichiers sera activé.</p>
+          <p className="mt-4 text-sm text-stone-600">Le logo pourra être ajouté quand le stockage des fichiers sera activé.</p>
         </Card>
 
         <Card>
-          <h2 className="mb-1 font-semibold text-gray-900">Équipe</h2>
-          <p className="mb-4 text-sm text-gray-600">Jusqu&apos;à 3 membres en plus du propriétaire.</p>
-          <ul className="divide-y divide-gray-100">
+          <h2 className="mb-1 text-base font-bold text-stone-900">Équipe</h2>
+          <p className="mb-4 text-sm text-stone-600">Jusqu&apos;à 3 membres en plus du propriétaire.</p>
+          <ul className="divide-y divide-stone-100">
             {members.map((m) => (
               <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <span>
-                  <span className="block font-medium text-gray-900">
-                    {m.name} {m.id === user.id && <span className="text-sm text-gray-500">(vous)</span>}
+                  <span className="block font-medium text-stone-900">
+                    {m.name} {m.id === user.id && <span className="text-sm text-stone-500">(vous)</span>}
                   </span>
-                  <span className="block text-sm text-gray-600">{m.email}</span>
+                  <span className="block text-sm text-stone-600">{m.email}</span>
                 </span>
                 {isOwner && m.role !== "OWNER" ? (
                   <span className="flex flex-wrap items-center gap-2">
                     <form action={changeRole.bind(null, m.id)} className="flex gap-2">
-                      <select name="role" defaultValue={m.role} aria-label={`Rôle de ${m.name}`} className="rounded border border-gray-300 px-2 py-1.5 text-sm">
+                      <select name="role" defaultValue={m.role} aria-label={`Rôle de ${m.name}`} className="rounded border border-stone-300 px-2 py-1.5 text-sm">
                         <option value="RECRUITER">{ROLE_LABELS.RECRUITER}</option>
                         <option value="VIEWER">{ROLE_LABELS.VIEWER}</option>
                       </select>
@@ -78,15 +78,15 @@ async function Content() {
                     </form>
                   </span>
                 ) : (
-                  <span className="text-sm text-gray-700">{ROLE_LABELS[m.role]}</span>
+                  <span className="text-sm text-stone-700">{ROLE_LABELS[m.role]}</span>
                 )}
               </li>
             ))}
             {invitations.map((inv) => (
               <li key={inv.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <span>
-                  <span className="block text-gray-900">{inv.email}</span>
-                  <span className="block text-sm text-gray-600">
+                  <span className="block text-stone-900">{inv.email}</span>
+                  <span className="block text-sm text-stone-600">
                     Invitation en attente · {ROLE_LABELS[inv.role]} · expire le{" "}
                     {inv.expiresAt.toLocaleDateString("fr-FR", { timeZone: "Africa/Bangui" })}
                   </span>
@@ -98,7 +98,7 @@ async function Content() {
             ))}
           </ul>
           {isOwner && invitedCount < 3 && (
-            <div className="mt-4 border-t border-gray-100 pt-4">
+            <div className="mt-4 border-t border-stone-100 pt-4">
               <InviteForm />
             </div>
           )}
@@ -110,7 +110,7 @@ async function Content() {
 
 export default function CompanyPage() {
   return (
-    <Suspense fallback={<p className="text-gray-600">Chargement…</p>}>
+    <Suspense fallback={<Loading />}>
       <Content />
     </Suspense>
   );

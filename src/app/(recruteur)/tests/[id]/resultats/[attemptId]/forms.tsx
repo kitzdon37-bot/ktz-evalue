@@ -20,7 +20,7 @@ export function OverrideForm({ answerId, current, max }: { answerId: string; cur
   const [state, action] = useActionState(overrideAnswerScore.bind(null, answerId), undefined);
   return (
     <form action={action} className="mt-2 flex flex-wrap items-center gap-2">
-      <label className="text-sm text-gray-700" htmlFor={`o-${answerId}`}>
+      <label className="text-sm text-stone-700" htmlFor={`o-${answerId}`}>
         Modifier la note :
       </label>
       <input
@@ -29,9 +29,9 @@ export function OverrideForm({ answerId, current, max }: { answerId: string; cur
         inputMode="decimal"
         defaultValue={current ?? ""}
         placeholder={`0 à ${max}`}
-        className="w-24 rounded border border-gray-300 px-2 py-1.5 text-sm"
+        className="w-24 rounded border border-stone-300 px-2 py-1.5 text-sm"
       />
-      <span className="text-sm text-gray-600">/ {max}</span>
+      <span className="text-sm text-stone-600">/ {max}</span>
       <ActionButton className={btn.small}>Enregistrer</ActionButton>
       <div className="w-full">
         <FormMessage state={state} />

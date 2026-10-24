@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { requireCompany } from "@/lib/tenant";
 import { formatDuration, getTestResults } from "@/lib/results-view";
 import { GlobalScore, ReliabilityBadge, ScoreBar } from "@/components/results";
-import { BackLink, Notice, PageTitle } from "@/components/ui";
+import { BackLink, Notice, PageTitle , Loading } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Comparaison" };
 
@@ -31,8 +31,8 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/comparer
       <PageTitle title="Comparaison des candidats" subtitle={test.title} />
       <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(220px, 1fr))` }}>
         {selected.map((r) => (
-          <div key={r.id} className="rounded-lg border border-gray-200 bg-white p-4">
-            <Link href={`/tests/${id}/resultats/${r.id}`} className="font-semibold text-gray-900 underline">
+          <div key={r.id} className="rounded-lg border border-stone-200 bg-white p-4">
+            <Link href={`/tests/${id}/resultats/${r.id}`} className="font-semibold text-stone-900 underline">
               {r.name}
             </Link>
             <div className="mt-2">
@@ -41,13 +41,13 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/comparer
             <div className="mt-2">
               <ReliabilityBadge level={r.reliability} label={r.reliabilityLabel ? `Fiabilité : ${r.reliabilityLabel}` : null} />
             </div>
-            <p className="mt-1 text-xs text-gray-600">{r.reliabilitySummary}</p>
+            <p className="mt-1 text-xs text-stone-600">{r.reliabilitySummary}</p>
             <div className="mt-4 space-y-3">
               {r.skillScores.map((s) => (
                 <ScoreBar key={s.id} label={s.name} score={s.score} />
               ))}
             </div>
-            <dl className="mt-4 space-y-1 text-sm text-gray-700">
+            <dl className="mt-4 space-y-1 text-sm text-stone-700">
               <div>
                 <dt className="inline font-medium">Durée : </dt>
                 <dd className="inline">{formatDuration(r.durationSec)}</dd>
@@ -72,7 +72,7 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/comparer
 
 export default function ComparePage(props: PageProps<"/tests/[id]/comparer">) {
   return (
-    <Suspense fallback={<p className="text-gray-600">Chargement…</p>}>
+    <Suspense fallback={<Loading />}>
       <Content {...props} />
     </Suspense>
   );

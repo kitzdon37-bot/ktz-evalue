@@ -24,8 +24,8 @@ function Toggle({ name, checked, title, help }: { name: keyof Values; checked: b
     <label className="flex items-start gap-3 py-2">
       <input type="checkbox" name={name} defaultChecked={checked} className="mt-0.5 h-5 w-5 shrink-0" />
       <span>
-        <span className="block text-sm font-medium text-gray-900">{title}</span>
-        {help && <span className="block text-sm text-gray-600">{help}</span>}
+        <span className="block text-sm font-medium text-stone-900">{title}</span>
+        {help && <span className="block text-sm text-stone-600">{help}</span>}
       </span>
     </label>
   );
@@ -40,7 +40,7 @@ export function SettingsForm({ testId, values: v }: { testId: string; values: Va
       <FormMessage state={state} />
 
       <Card className="space-y-4">
-        <h2 className="font-semibold text-gray-900">Général</h2>
+        <h2 className="text-base font-bold text-stone-900">Général</h2>
         <div>
           <label htmlFor="title" className={label}>
             Titre du test (vu par le candidat)
@@ -82,8 +82,8 @@ export function SettingsForm({ testId, values: v }: { testId: string; values: Va
       </Card>
 
       <Card>
-        <h2 className="mb-1 font-semibold text-gray-900">Anti-triche</h2>
-        <p className="mb-2 text-sm text-gray-600">
+        <h2 className="mb-1 text-base font-bold text-stone-900">Anti-triche</h2>
+        <p className="mb-2 text-sm text-stone-600">
           Le candidat n&apos;est jamais bloqué : les signaux sont enregistrés et vous sont montrés.
         </p>
         <Toggle name="shuffleQuestions" checked={v.shuffleQuestions} title="Ordre des questions mélangé" help="Et tirage dans la réserve : chaque candidat a une version différente." />
@@ -113,7 +113,7 @@ export function SettingsForm({ testId, values: v }: { testId: string; values: Va
       </Card>
 
       <Card>
-        <h2 className="mb-2 font-semibold text-gray-900">Résultats</h2>
+        <h2 className="mb-2 font-semibold text-stone-900">Résultats</h2>
         <Toggle name="showScoreToCandidate" checked={v.showScoreToCandidate} title="Montrer son score au candidat à la fin du test" />
         <Toggle
           name="badgesEnabled"
@@ -131,7 +131,7 @@ export function SettingsForm({ testId, values: v }: { testId: string; values: Va
           Enregistrer et publier le test
         </ActionButton>
       </div>
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-stone-600">
         Une fois publié, le test ne peut plus être modifié (vous pourrez le dupliquer pour en faire une nouvelle version).
       </p>
     </form>

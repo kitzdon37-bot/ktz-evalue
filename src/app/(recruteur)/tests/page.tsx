@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { ArrowRight, Clock, HelpCircle, Plus, Sparkles, Users } from "lucide-react";
 import { db } from "@/lib/db";
 import { canEdit, requireCompany } from "@/lib/tenant";
 import { LEVEL_LABELS, TEST_STATUS_LABELS } from "@/lib/tests/model";
-import { btn, Card, PageTitle, StatusBadge } from "@/components/ui";
+import { btn, EmptyState, Loading, PageTitle, StatusBadge } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Tests" };
 
@@ -16,6 +17,7 @@ async function TestList() {
     select: {
       id: true,
       title: true,
+      jobTitle: true,
       status: true,
       level: true,
       durationMinutes: true,
@@ -24,44 +26,71 @@ async function TestList() {
       _count: { select: { invitations: true, attempts: true } },
     },
   });
+  const editable = canEdit(user);
 
   return (
     <>
       <PageTitle
-        title="Tests"
-        subtitle="Vos tests de recrutement."
+        eyebrow="Recrutement"
+        title="Vos tests"
+        subtitle="Créez, publiez et suivez vos tests de recrutement."
         action={
-          canEdit(user) && (
+          editable && (
             <Link href="/tests/nouveau" className={btn.primary}>
-              + Nouveau test
+              <Plus className="h-4 w-4" /> Nouveau test
             </Link>
           )
         }
       />
       {tests.length === 0 ? (
-        <Card className="text-center">
-          <p className="font-semibold text-gray-900">Aucun test pour le moment.</p>
-          <p className="mt-1 text-sm text-gray-600">
-            Créez un test avec l&apos;IA, ou partez d&apos;un modèle de la{" "}
-            <Link href="/bibliotheque" className="text-teal-800 underline">
-              bibliothèque
-            </Link>
-            .
-          </p>
-        </Card>
+        <EmptyState
+          icon={Sparkles}
+          title="Aucun test pour le moment"
+          action={
+            editable && (
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Link href="/tests/nouveau" className={btn.primary}>
+                  <Sparkles className="h-4 w-4" /> Créer avec l&apos;IA
+                </Link>
+                <Link href="/bibliotheque" className={btn.secondary}>
+                  Partir d&apos;un modèle
+                </Link>
+              </div>
+            )
+          }
+        >
+          Un test se crée en quelques minutes à partir de votre offre d&apos;emploi.
+        </EmptyState>
       ) : (
-        <ul className="space-y-3">
+        <ul className="grid gap-4 md:grid-cols-2">
           {tests.map((t) => (
             <li key={t.id}>
-              <Link href={`/tests/${t.id}`} className="block rounded-lg border border-gray-200 bg-white p-4 hover:border-teal-600">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-semibold text-gray-900">{t.title}</span>
+              <Link
+                href={`/tests/${t.id}`}
+                className="group flex h-full flex-col rounded-2xl border border-stone-200/80 bg-white p-5 shadow-soft transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lift"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold uppercase tracking-wide text-brand-600">{t.jobTitle}</p>
+                    <h2 className="mt-1 text-lg font-bold leading-snug text-stone-900">{t.title}</h2>
+                  </div>
                   <StatusBadge status={t.status} label={TEST_STATUS_LABELS[t.status]} />
                 </div>
-                <p className="mt-1 text-sm text-gray-600">
-                  {LEVEL_LABELS[t.level]} · {t.durationMinutes} min · {t.questionCount} questions · {t._count.invitations}{" "}
-                  invité(s) · {t._count.attempts} passage(s)
-                </p>
+                <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-sm text-stone-600">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Clock className="h-4 w-4 text-stone-400" /> {t.durationMinutes} min
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <HelpCircle className="h-4 w-4 text-stone-400" /> {t.questionCount} questions · {LEVEL_LABELS[t.level]}
+                  </span>
+                </div>
+                <div className="mt-5 flex items-center justify-between gap-3 border-t border-stone-100 pt-4 text-sm">
+                  <span className="inline-flex items-center gap-1.5 text-stone-700">
+                    <Users className="h-4 w-4 text-stone-400" />
+                    <strong className="text-stone-900">{t._count.attempts}</strong> passage(s) sur {t._count.invitations} invité(s)
+                  </span>
+                  <ArrowRight className="h-4 w-4 text-stone-400 transition group-hover:translate-x-0.5 group-hover:text-brand-600" />
+                </div>
               </Link>
             </li>
           ))}
@@ -73,7 +102,7 @@ async function TestList() {
 
 export default function TestsPage() {
   return (
-    <Suspense fallback={<p className="text-gray-600">Chargement…</p>}>
+    <Suspense fallback={<Loading />}>
       <TestList />
     </Suspense>
   );

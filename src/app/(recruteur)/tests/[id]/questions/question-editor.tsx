@@ -55,12 +55,12 @@ export function QuestionEditor({
   const name = `q-${q.id}`;
 
   return (
-    <details className="group rounded-lg border border-gray-200 bg-white" open={q.problems.length > 0 && q.prompt === ""}>
+    <details className="group rounded-lg border border-stone-200 bg-white" open={q.problems.length > 0 && q.prompt === ""}>
       <summary className="flex cursor-pointer list-none items-start gap-3 p-4">
-        <span className="mt-0.5 shrink-0 rounded bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700">{index}</span>
+        <span className="mt-0.5 shrink-0 rounded bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-700">{index}</span>
         <span className="min-w-0 flex-1">
-          <span className="block text-sm text-gray-900">{q.prompt || <em className="text-gray-500">Question vide</em>}</span>
-          <span className="mt-1 flex flex-wrap gap-2 text-xs text-gray-600">
+          <span className="block text-sm text-stone-900">{q.prompt || <em className="text-stone-500">Question vide</em>}</span>
+          <span className="mt-1 flex flex-wrap gap-2 text-xs text-stone-600">
             <span>{QUESTION_TYPE_LABELS[q.type]}</span>
             <span>· {q.points} pt</span>
             <span>· {q.suggestedTimeSec} s</span>
@@ -68,10 +68,10 @@ export function QuestionEditor({
             {q.problems.length > 0 && <span className="rounded bg-red-100 px-1.5 text-red-800">À corriger</span>}
           </span>
         </span>
-        <span className="text-sm text-teal-800 group-open:hidden">Modifier</span>
+        <span className="text-sm text-brand-800 group-open:hidden">Modifier</span>
       </summary>
 
-      <div className="space-y-4 border-t border-gray-100 p-4">
+      <div className="space-y-4 border-t border-stone-100 p-4">
         {q.problems.length > 0 && (
           <ul className="list-inside list-disc rounded-md bg-red-50 p-3 text-sm text-red-800">
             {q.problems.map((p) => (
@@ -126,7 +126,7 @@ export function QuestionEditor({
                   </div>
                 ))}
               </div>
-              <p className="mt-1 text-xs text-gray-500">Laissez un champ vide pour supprimer ce choix.</p>
+              <p className="mt-1 text-xs text-stone-500">Laissez un champ vide pour supprimer ce choix.</p>
             </fieldset>
           )}
 
@@ -204,7 +204,7 @@ export function QuestionEditor({
                   />
                 </div>
               ))}
-              <p className="text-xs text-gray-500">Enregistrez pour ajouter une ligne de critère supplémentaire.</p>
+              <p className="text-xs text-stone-500">Enregistrez pour ajouter une ligne de critère supplémentaire.</p>
               <div>
                 <label htmlFor={`${name}-example`} className={label}>
                   Exemple de bonne réponse
@@ -276,7 +276,7 @@ export function QuestionEditor({
             </div>
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-gray-800">
+          <label className="flex items-center gap-2 text-sm text-stone-800">
             <input type="checkbox" name="isReserve" defaultChecked={q.isReserve} className="h-5 w-5" />
             Question de réserve (tirée au sort pour varier les versions entre candidats)
           </label>
@@ -284,7 +284,7 @@ export function QuestionEditor({
           <ActionButton className={btn.primary}>Enregistrer la question</ActionButton>
         </form>
 
-        <div className="flex flex-wrap gap-2 border-t border-gray-100 pt-3">
+        <div className="flex flex-wrap gap-2 border-t border-stone-100 pt-3">
           <form action={moveQuestion.bind(null, testId, q.id, "up")}>
             <ActionButton className={btn.small} disabled={isFirst}>
               ↑ Monter

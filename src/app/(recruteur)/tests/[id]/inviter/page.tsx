@@ -6,7 +6,7 @@ import { appUrl } from "@/lib/email";
 import { canEdit, requireCompany } from "@/lib/tenant";
 import { getCompanyTest } from "@/lib/tests/repository";
 import { ActionButton } from "@/components/form";
-import { BackLink, btn, Card, Notice, PageTitle } from "@/components/ui";
+import { BackLink, btn, Card, Notice, PageTitle , Loading } from "@/components/ui";
 import { cancelInvitationAction, remindInvitation, setExtraTime } from "./actions";
 import { CopyButton, InviteCandidatesForm, PublicLinkForm } from "./forms";
 
@@ -15,13 +15,13 @@ export const metadata: Metadata = { title: "Inviter des candidats" };
 export const maxDuration = 300;
 
 const STATUS: Record<string, { label: string; cls: string }> = {
-  PENDING: { label: "Non envoyée", cls: "bg-gray-100 text-gray-800" },
+  PENDING: { label: "Non envoyée", cls: "bg-stone-100 text-stone-800" },
   SENT: { label: "Envoyée", cls: "bg-sky-100 text-sky-900" },
   OPENED: { label: "Ouverte", cls: "bg-indigo-100 text-indigo-900" },
   STARTED: { label: "Commencée", cls: "bg-amber-100 text-amber-900" },
-  COMPLETED: { label: "Terminée", cls: "bg-teal-100 text-teal-900" },
-  EXPIRED: { label: "Expirée", cls: "bg-gray-200 text-gray-600" },
-  CANCELLED: { label: "Annulée", cls: "bg-gray-200 text-gray-600" },
+  COMPLETED: { label: "Terminée", cls: "bg-brand-100 text-brand-900" },
+  EXPIRED: { label: "Expirée", cls: "bg-stone-200 text-stone-600" },
+  CANCELLED: { label: "Annulée", cls: "bg-stone-200 text-stone-600" },
 };
 
 async function Content({ params }: PageProps<"/tests/[id]/inviter">) {
@@ -60,12 +60,12 @@ async function Content({ params }: PageProps<"/tests/[id]/inviter">) {
       {editable && (
         <div className="mb-6 grid gap-4 lg:grid-cols-[3fr_2fr]">
           <Card>
-            <h2 className="mb-3 font-semibold text-gray-900">Inviter par email ou WhatsApp</h2>
+            <h2 className="mb-4 text-base font-bold text-stone-900">Inviter par email ou WhatsApp</h2>
             <InviteCandidatesForm testId={id} />
           </Card>
           <Card>
-            <h2 className="mb-1 font-semibold text-gray-900">Lien public</h2>
-            <p className="mb-3 text-sm text-gray-600">
+            <h2 className="mb-1 text-base font-bold text-stone-900">Lien public</h2>
+            <p className="mb-3 text-sm text-stone-600">
               À coller dans une offre ou sur un groupe WhatsApp. Chaque candidat donne son nom et son email ou téléphone ;
               un même contact ne peut passer le test qu&apos;une fois.
             </p>
@@ -81,33 +81,33 @@ async function Content({ params }: PageProps<"/tests/[id]/inviter">) {
       )}
 
       <Card>
-        <h2 className="mb-1 font-semibold text-gray-900">Suivi des candidats</h2>
+        <h2 className="mb-1 text-base font-bold text-stone-900">Suivi des candidats</h2>
         {test.deadline ? (
-          <p className="mb-3 text-sm text-gray-600">
+          <p className="mb-3 text-sm text-stone-600">
             Date limite : {test.deadline.toLocaleDateString("fr-FR", { timeZone: "Africa/Bangui" })}. Relances automatiques{" "}
             {test.reminderHours.map((h) => `${h} h`).join(" puis ")} avant, pour ceux qui n&apos;ont pas commencé.
           </p>
         ) : (
-          <p className="mb-3 text-sm text-gray-600">
+          <p className="mb-3 text-sm text-stone-600">
             Sans date limite, les liens sont valables 14 jours et il n&apos;y a pas de relance automatique (relance manuelle possible).
           </p>
         )}
         {invitations.length === 0 ? (
-          <p className="text-sm text-gray-600">Aucun candidat invité pour le moment.</p>
+          <p className="text-sm text-stone-600">Aucun candidat invité pour le moment.</p>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-stone-100">
             {invitations.map((inv) => {
               const st = STATUS[inv.status];
               const waiting = ["PENDING", "SENT", "OPENED"].includes(inv.status);
               return (
                 <li key={inv.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
-                    <p className="font-medium text-gray-900">
+                    <p className="font-medium text-stone-900">
                       {inv.candidate.name}{" "}
                       <span className={`ml-1 rounded-full px-2 py-0.5 text-xs font-semibold ${st.cls}`}>{st.label}</span>
-                      {inv.extraTimePercent > 0 && <span className="ml-1 text-xs text-gray-600">· temps +{inv.extraTimePercent} %</span>}
+                      {inv.extraTimePercent > 0 && <span className="ml-1 text-xs text-stone-600">· temps +{inv.extraTimePercent} %</span>}
                     </p>
-                    <p className="truncate text-sm text-gray-600">
+                    <p className="truncate text-sm text-stone-600">
                       {[inv.candidate.email, inv.candidate.phone].filter(Boolean).join(" · ")}
                       {inv.remindersSent > 0 && ` · ${inv.remindersSent} relance(s)`}
                       {inv.channel === "PUBLIC_LINK" && " · lien public"}
@@ -138,9 +138,9 @@ async function Content({ params }: PageProps<"/tests/[id]/inviter">) {
           </ul>
         )}
       </Card>
-      <p className="mt-4 text-sm text-gray-600">
+      <p className="mt-4 text-sm text-stone-600">
         Les résultats des candidats seront visibles dans{" "}
-        <Link href={`/tests/${id}`} className="text-teal-800 underline">
+        <Link href={`/tests/${id}`} className="text-brand-800 underline">
           la fiche du test
         </Link>
         .
@@ -151,7 +151,7 @@ async function Content({ params }: PageProps<"/tests/[id]/inviter">) {
 
 export default function InvitePage(props: PageProps<"/tests/[id]/inviter">) {
   return (
-    <Suspense fallback={<p className="text-gray-600">Chargement…</p>}>
+    <Suspense fallback={<Loading />}>
       <Content {...props} />
     </Suspense>
   );

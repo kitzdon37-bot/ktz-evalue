@@ -42,7 +42,7 @@ export function SkillsForm({
       <form action={action} className="space-y-4">
         <FormMessage state={state} />
         <Card className="space-y-3">
-          <div className="hidden grid-cols-[1fr_7rem_2.5rem] gap-2 text-sm font-medium text-gray-700 sm:grid">
+          <div className="hidden grid-cols-[1fr_7rem_2.5rem] gap-2 text-sm font-medium text-stone-700 sm:grid">
             <span>Compétence</span>
             <span>Poids (%)</span>
             <span />
@@ -94,7 +94,7 @@ export function SkillsForm({
                 Répartir également
               </button>
             </div>
-            <span className={`text-sm font-semibold ${total === 100 ? "text-teal-800" : "text-red-700"}`}>
+            <span className={`text-sm font-semibold ${total === 100 ? "text-brand-800" : "text-red-700"}`}>
               Total : {total} %
             </span>
           </div>
@@ -121,9 +121,9 @@ export function SkillsForm({
       </form>
 
       {aiAvailable && (
-        <form action={propose} className="border-t border-gray-200 pt-4">
+        <form action={propose} className="border-t border-stone-200 pt-4">
           <FormMessage state={proposeState} />
-          <p className="mb-2 text-sm text-gray-600">
+          <p className="mb-2 text-sm text-stone-600">
             Remplace la liste actuelle par une nouvelle proposition de l&apos;IA
             {hasQuestions ? " (les questions déjà écrites seront supprimées)" : ""}.
           </p>

@@ -9,25 +9,30 @@ export function esc(s: string | null | undefined): string {
   return String(s ?? "").replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 }
 
-const CSS = `*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Roboto,Arial,sans-serif;font-size:17px;line-height:1.45;color:#111827;background:#f3f4f6}
-.w{max-width:640px;margin:0 auto;padding:16px}.c{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:18px;margin-bottom:14px}
-h1{font-size:22px;margin:0 0 6px}h2{font-size:18px;margin:0 0 10px}p{margin:8px 0}.m{color:#4b5563;font-size:15px}
-.co{font-weight:700;color:var(--b)}.btn{display:block;width:100%;border:0;border-radius:10px;padding:15px;font-size:18px;font-weight:700;color:#fff;background:var(--b);cursor:pointer}
-.btn[disabled]{opacity:.6}.opt{display:flex;gap:12px;align-items:flex-start;border:2px solid #d1d5db;border-radius:10px;padding:13px;margin:9px 0;background:#fff}
-.opt input{width:22px;height:22px;flex:none;margin:1px 0 0}textarea,input[type=text]{width:100%;font:inherit;border:2px solid #d1d5db;border-radius:10px;padding:12px}
-textarea{min-height:170px}.q{user-select:none;-webkit-user-select:none;font-size:18px}.bar{height:7px;background:#e5e7eb;border-radius:4px;margin:8px 0 14px}
-.bar div{height:7px;background:var(--b);border-radius:4px}.top{display:flex;justify-content:space-between;font-size:14px;color:#4b5563}
-.t{font-weight:700;color:#111827}.al{border-radius:10px;padding:12px;margin:10px 0;font-size:15px}.er{background:#fef2f2;color:#991b1b}
-.ok{background:#f0fdfa;color:#134e4a}.wa{background:#fffbeb;color:#92400e}ul{padding-left:20px;margin:8px 0}li{margin:5px 0}
-label.ck{display:flex;gap:10px;align-items:flex-start;margin:12px 0}label.ck input{width:22px;height:22px;flex:none}.big{font-size:40px;font-weight:800}`;
+const CSS = `*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:17px;line-height:1.5;color:#1c1917;background:#f5f5f0}
+.w{max-width:620px;margin:0 auto;padding:16px}.c{background:#fff;border:1px solid #e7e5e4;border-radius:18px;padding:20px;margin-bottom:14px;box-shadow:0 1px 2px rgba(0,0,0,.03),0 6px 18px -8px rgba(0,0,0,.08)}
+h1{font-size:23px;line-height:1.25;margin:0 0 8px;letter-spacing:-.01em}h2{font-size:17px;margin:0 0 10px}p{margin:8px 0}.m{color:#57534e;font-size:15px}
+.hero{background:var(--b);background-image:linear-gradient(135deg,var(--b),#062a24);color:#fff;border:0}.hero .m{color:rgba(255,255,255,.8)}
+.co{display:flex;align-items:center;gap:10px;font-weight:700;margin:0 0 14px}.av{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-weight:800}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.chip{background:rgba(255,255,255,.15);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:600}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:16px;font-size:18px;font-weight:700;color:#fff;background:var(--b);cursor:pointer;box-shadow:0 4px 12px -4px rgba(0,0,0,.3)}
+.btn[disabled]{opacity:.6}.opt{display:flex;gap:12px;align-items:flex-start;border:2px solid #e7e5e4;border-radius:14px;padding:14px;margin:10px 0;background:#fff;cursor:pointer}
+.opt:has(input:checked),.opt.on{border-color:var(--b);background:#effcf8}.opt input{width:22px;height:22px;flex:none;margin:1px 0 0;accent-color:var(--b)}
+textarea,input[type=text]{width:100%;font:inherit;border:2px solid #e7e5e4;border-radius:14px;padding:13px;background:#fff}textarea:focus,input[type=text]:focus{outline:0;border-color:var(--b)}
+textarea{min-height:180px}.q{user-select:none;-webkit-user-select:none;font-size:19px;font-weight:600;line-height:1.4}.bar{height:8px;background:#e7e5e4;border-radius:99px;margin:10px 0 16px;overflow:hidden}
+.bar div{height:8px;background:var(--b);border-radius:99px}.top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px;color:#57534e}
+.t{font-weight:800;color:#1c1917;background:#fff;border:1px solid #e7e5e4;border-radius:99px;padding:3px 10px;display:inline-block}.al{border-radius:12px;padding:12px 14px;margin:10px 0;font-size:15px}.er{background:#fef2f2;color:#991b1b}
+.ok{background:#effcf8;color:#12473e}.wa{background:#fffbeb;color:#92400e}ul{padding-left:20px;margin:8px 0}li{margin:6px 0}
+label.ck{display:flex;gap:12px;align-items:flex-start;margin:12px 0;font-size:15px}label.ck input{width:22px;height:22px;flex:none;accent-color:var(--b)}.big{font-size:52px;font-weight:800;letter-spacing:-.02em;margin:4px 0}
+.done{text-align:center}.ic{width:64px;height:64px;border-radius:50%;background:#effcf8;color:var(--b);display:flex;align-items:center;justify-content:center;font-size:34px;margin:6px auto 12px}.ft{text-align:center;color:#a8a29e;font-size:13px}`;
 
 export function layout(opts: { title: string; color?: string | null; body: string; script?: string }) {
-  const color = /^#[0-9a-fA-F]{6}$/.test(opts.color ?? "") ? opts.color : "#0f766e";
+  const color = /^#[0-9a-fA-F]{6}$/.test(opts.color ?? "") ? opts.color : "#136b5a";
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${esc(opts.title)}</title><style>:root{--b:${color}}${CSS}</style></head><body><div class="w">${opts.body}</div>${opts.script ? `<script>${opts.script}</script>` : ""}</body></html>`;
 }
 
 export function messagePage(title: string, message: string, color?: string | null) {
-  return layout({ title, color, body: `<div class="c"><h1>${esc(title)}</h1><p>${esc(message)}</p></div>` });
+  return layout({ title, color, body: `<div class="c done"><div class="ic">i</div><h1>${esc(title)}</h1><p class="m">${esc(message)}</p></div><p class="ft">KTZ Évalue</p>` });
 }
 
 function formatDuration(sec: number) {
@@ -55,13 +60,11 @@ export function welcomePage(v: {
 }) {
   const until = v.expiresAt.toLocaleDateString("fr-FR", { timeZone: "Africa/Bangui", day: "numeric", month: "long", year: "numeric" });
   const duration = Math.round(v.durationMinutes * (1 + v.extraTimePercent / 100));
-  const body = `<div class="c">
-${v.logoUrl ? `<img src="${esc(v.logoUrl)}" alt="" style="max-height:48px;max-width:160px;margin-bottom:8px">` : ""}
-<p class="co">${esc(v.companyName)}</p><h1>${esc(v.testTitle)}</h1>
-<p>Bonjour ${esc(v.candidateName)}, voici le test de recrutement préparé par ${esc(v.companyName)}.</p>
-<ul><li><b>${duration} minutes</b> au total${v.extraTimePercent ? ` (temps majoré de ${v.extraTimePercent} %)` : ""}</li>
-<li><b>${v.questionCount} questions</b>, une par écran, chacune avec son propre temps</li>
-<li>À commencer avant le ${esc(until)}</li></ul></div>
+  const body = `<div class="c hero">
+<p class="co">${v.logoUrl ? `<img src="${esc(v.logoUrl)}" alt="" style="max-height:38px;max-width:120px;border-radius:8px;background:#fff">` : `<span class="av">${esc(v.companyName.slice(0, 1).toUpperCase())}</span>`}${esc(v.companyName)}</p>
+<h1>${esc(v.testTitle)}</h1>
+<p class="m">Bonjour ${esc(v.candidateName)}, voici le test de recrutement préparé pour vous.</p>
+<div class="chips"><span class="chip">⏱ ${duration} min${v.extraTimePercent ? ` (+${v.extraTimePercent} %)` : ""}</span><span class="chip">${v.questionCount} questions</span><span class="chip">Avant le ${esc(until)}</span></div></div>
 <div class="c"><h2>Règles</h2><ul>
 <li>Pas de retour en arrière : une réponse validée est définitive.</li>
 <li>Le chronomètre continue même si vous fermez la page ou perdez le réseau. Rouvrez simplement ce lien pour reprendre.</li>
@@ -74,7 +77,7 @@ ${v.error ? `<p class="al er">${esc(v.error)}</p>` : ""}
 <label class="ck"><input type="checkbox" name="consent" value="1" required><span>J'accepte que mes réponses et les signaux enregistrés pendant le test soient transmis à ${esc(v.companyName)} pour ce recrutement. Ils sont supprimés au plus tard 12 mois après le test.</span></label>
 ${v.webcam ? `<label class="ck"><input type="checkbox" name="webcam" value="1" required><span>J'accepte que des photos soient prises par la caméra pendant le test (une toutes les 30 à 60 secondes). Elles sont supprimées 90 jours après le test.</span></label>` : ""}
 <button class="btn" type="submit">Commencer le test</button></form>
-<p class="m" style="text-align:center">KTZ Évalue</p>`;
+<p class="ft">Test proposé avec KTZ Évalue</p>`;
   const script = v.fullscreen
     ? `(function(){var f=document.getElementById('f');if(!f)return;f.addEventListener('submit',function(){try{if(!/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)){var d=document.documentElement;(d.requestFullscreen||d.webkitRequestFullscreen||function(){}).call(d)}}catch(e){}})})();`
     : undefined;
@@ -117,13 +120,13 @@ export function questionPage(v: {
     field = `${oral}<textarea name="text" maxlength="10000" class="ans" aria-label="Votre réponse"></textarea>`;
   }
 
-  const body = `<div class="top"><span>Question ${v.index} / ${v.total}</span><span>Question : <span class="t" id="qt">${formatDuration(v.questionRemainingSec)}</span> · Test : <span class="t" id="tt">${formatDuration(v.totalRemainingSec)}</span></span></div>
-<div class="bar"><div style="width:${Math.round(((v.index - 1) / v.total) * 100)}%"></div></div>
+  const body = `<div class="top"><b>Question ${v.index} / ${v.total}</b><span>⏱ <span class="t" id="qt">${formatDuration(v.questionRemainingSec)}</span> · test <span class="t" id="tt">${formatDuration(v.totalRemainingSec)}</span></span></div>
+<div class="bar"><div style="width:${Math.max(3, Math.round(((v.index - 1) / v.total) * 100))}%"></div></div>
 <form class="c" method="post" action="/t/${esc(v.token)}" id="f">
 <input type="hidden" name="action" value="answer"><input type="hidden" name="questionId" value="${esc(q.id)}">
 <p class="q">${esc(q.prompt).replace(/\n/g, "<br>")}</p>${field}
 <div id="msg"></div><button class="btn" type="submit" id="b">Valider</button></form>
-<p class="m" style="text-align:center">${esc(v.companyName)} · ${esc(v.testTitle)}</p>`;
+<p class="ft">${esc(v.companyName)} · ${esc(v.testTitle)}</p>`;
 
   const cfg = JSON.stringify({
     t: v.token,
@@ -176,15 +179,15 @@ export function donePage(v: {
   if (v.showScore) {
     scoreBlock =
       v.score !== null
-        ? `<div class="c" style="text-align:center"><p class="m">Votre score</p><p class="big">${Math.round(v.score)}/100</p></div>`
+        ? `<div class="c done"><p class="m">Votre score</p><p class="big">${Math.round(v.score)}<span style="font-size:22px;color:#a8a29e">/100</span></p></div>`
         : v.pending
           ? `<p class="al ok">Certaines réponses sont en cours de correction. Votre score vous sera communiqué par ${esc(v.companyName)}.</p>`
           : "";
   }
-  const body = `<div class="c"><p class="co">${esc(v.companyName)}</p><h1>Test terminé, merci !</h1>
+  const body = `<div class="c done"><div class="ic">✓</div><h1>Test terminé, merci !</h1>
 ${v.timedOut ? `<p class="al wa">Le temps du test est écoulé. Les réponses validées avant la fin ont bien été enregistrées.</p>` : `<p class="al ok">Toutes vos réponses ont bien été enregistrées.</p>`}
 <p>${esc(v.companyName)} a été prévenu et reviendra vers vous pour la suite du recrutement « ${esc(v.testTitle)} ».</p></div>${scoreBlock}
-<p class="m" style="text-align:center">Vous pouvez fermer cette page.</p>`;
+<p class="ft">Vous pouvez fermer cette page.</p>`;
   return layout({ title: "Test terminé", color: v.color, body });
 }
 
@@ -199,8 +202,8 @@ export function publicSignupPage(v: {
   error?: string;
   values?: { name?: string; email?: string; phone?: string };
 }) {
-  const body = `<div class="c"><p class="co">${esc(v.companyName)}</p><h1>${esc(v.testTitle)}</h1>
-<p>Test de recrutement de ${v.durationMinutes} minutes, à passer sur téléphone ou ordinateur, sans créer de compte. Un même email ou numéro ne peut passer le test qu'une fois.</p></div>
+  const body = `<div class="c hero"><p class="co"><span class="av">${esc(v.companyName.slice(0, 1).toUpperCase())}</span>${esc(v.companyName)}</p><h1>${esc(v.testTitle)}</h1>
+<p class="m">Test de recrutement de ${v.durationMinutes} minutes, à passer sur téléphone ou ordinateur, sans créer de compte. Un même email ou numéro ne peut passer le test qu'une fois.</p></div>
 <form class="c" method="post" action="/p/${esc(v.publicToken)}">
 ${v.error ? `<p class="al er">${esc(v.error)}</p>` : ""}
 <p><label>Nom et prénom<br><input type="text" name="name" required maxlength="100" value="${esc(v.values?.name)}"></label></p>

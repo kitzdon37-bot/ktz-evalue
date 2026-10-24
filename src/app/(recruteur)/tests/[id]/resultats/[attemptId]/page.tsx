@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { FileText } from "lucide-react";
 import { Suspense } from "react";
 import * as z from "zod";
 import { db } from "@/lib/db";
@@ -11,7 +12,7 @@ import { RELIABILITY_LABELS, type ReliabilityLevel } from "@/lib/scoring/reliabi
 import { formatDuration, RECRUITER_STATUS_LABELS } from "@/lib/results-view";
 import { ActionButton } from "@/components/form";
 import { GlobalScore, ReliabilityBadge, ScoreBar } from "@/components/results";
-import { BackLink, btn, Card, Notice } from "@/components/ui";
+import { BackLink, btn, Card, Notice , Loading } from "@/components/ui";
 import { retryGrading, setRecruiterStatus } from "../actions";
 import { NoteForm, OverrideForm } from "./forms";
 
@@ -65,20 +66,25 @@ async function Content({ params }: PageProps<"/tests/[id]/resultats/[attemptId]"
   return (
     <>
       <BackLink href={`/tests/${id}/resultats`}>Classement</BackLink>
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{attempt.candidate.name}</h1>
-          <p className="text-gray-600">{[attempt.candidate.email, attempt.candidate.phone].filter(Boolean).join(" · ")}</p>
-          <p className="text-sm text-gray-600">
+      <div className="mb-6 flex flex-col gap-4 rounded-3xl border border-stone-200/80 bg-white p-6 shadow-soft sm:flex-row sm:items-center sm:justify-between sm:p-8">
+        <div className="flex items-center gap-4">
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-800 text-xl font-extrabold text-white shadow-md">
+            {attempt.candidate.name.slice(0, 1).toUpperCase()}
+          </span>
+          <div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-stone-900">{attempt.candidate.name}</h1>
+          <p className="text-stone-600">{[attempt.candidate.email, attempt.candidate.phone].filter(Boolean).join(" · ")}</p>
+          <p className="text-sm text-stone-600">
             {attempt.test.title} · commencé le {attempt.startedAt.toLocaleString("fr-FR", { timeZone: "Africa/Bangui" })}
             {attempt.completedAt &&
               ` · durée ${formatDuration(Math.round((attempt.completedAt.getTime() - attempt.startedAt.getTime()) / 1000))}`}
           </p>
         </div>
+        </div>
         <div className="flex flex-col items-start gap-2 sm:items-end">
           <GlobalScore score={attempt.globalScore} pending={pending} passed={attempt.passed} />
           <a href={`/tests/${id}/resultats/${attempt.id}/rapport`} className={btn.secondary}>
-            Rapport PDF
+            <FileText className="h-4 w-4" /> Rapport PDF
           </a>
         </div>
       </div>
@@ -106,7 +112,7 @@ async function Content({ params }: PageProps<"/tests/[id]/resultats/[attemptId]"
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
-          <h2 className="mb-3 font-semibold text-gray-900">Score par compétence</h2>
+          <h2 className="mb-4 text-base font-bold text-stone-900">Score par compétence</h2>
           <div className="space-y-3">
             {attempt.test.skills.map((s) => (
               <ScoreBar key={s.id} label={`${s.name} (${s.weight} %)`} score={attempt.status === "IN_PROGRESS" ? null : (scores[s.id] ?? null)} />
@@ -116,12 +122,12 @@ async function Content({ params }: PageProps<"/tests/[id]/resultats/[attemptId]"
 
         <Card>
           <div className="mb-3 flex items-center justify-between gap-2">
-            <h2 className="font-semibold text-gray-900">Fiabilité</h2>
+            <h2 className="text-base font-bold text-stone-900">Fiabilité</h2>
             <ReliabilityBadge level={reliability} label={reliability ? RELIABILITY_LABELS[reliability] : null} />
           </div>
-          <p className="text-sm text-gray-800">{attempt.reliabilitySummary ?? "Analyse à la fin du test."}</p>
+          <p className="text-sm text-stone-800">{attempt.reliabilitySummary ?? "Analyse à la fin du test."}</p>
           {attempt.integrityEvents.length > 0 && (
-            <ul className="mt-3 max-h-56 space-y-1 overflow-y-auto text-sm text-gray-700">
+            <ul className="mt-3 max-h-56 space-y-1 overflow-y-auto text-sm text-stone-700">
               {attempt.integrityEvents.map((e) => (
                 <li key={e.id}>
                   {formatTime(e.occurredAt)} — {EVENT_LABELS[e.type] ?? e.type}
@@ -131,11 +137,11 @@ async function Content({ params }: PageProps<"/tests/[id]/resultats/[attemptId]"
               ))}
             </ul>
           )}
-          <p className="mt-3 text-xs text-gray-500">Aucun candidat n&apos;est exclu automatiquement : ces signaux vous aident à décider.</p>
+          <p className="mt-3 text-xs text-stone-500">Aucun candidat n&apos;est exclu automatiquement : ces signaux vous aident à décider.</p>
         </Card>
 
         <Card>
-          <h2 className="mb-3 font-semibold text-gray-900">Décision</h2>
+          <h2 className="mb-4 text-base font-bold text-stone-900">Décision</h2>
           {editable ? (
             <form action={setRecruiterStatus.bind(null, attempt.id)} className="mb-4 flex flex-wrap gap-2">
               {Object.entries(RECRUITER_STATUS_LABELS).map(([k, l]) => (
@@ -144,7 +150,7 @@ async function Content({ params }: PageProps<"/tests/[id]/resultats/[attemptId]"
                   type="submit"
                   name="status"
                   value={k}
-                  className={`rounded-full border px-3 py-1.5 text-sm ${attempt.recruiterStatus === k ? "border-teal-700 bg-teal-700 text-white" : "border-gray-300 bg-white text-gray-800 hover:bg-gray-100"}`}
+                  className={`rounded-full border px-3 py-1.5 text-sm ${attempt.recruiterStatus === k ? "border-brand-700 bg-brand-700 text-white" : "border-stone-300 bg-white text-stone-800 hover:bg-stone-100"}`}
                 >
                   {l}
                 </button>
@@ -157,20 +163,20 @@ async function Content({ params }: PageProps<"/tests/[id]/resultats/[attemptId]"
         </Card>
 
         <Card>
-          <h2 className="mb-3 font-semibold text-gray-900">À reposer en entretien</h2>
+          <h2 className="mb-4 text-base font-bold text-stone-900">À reposer en entretien</h2>
           {interview.success && interview.data.length > 0 ? (
-            <ul className="list-disc space-y-2 pl-5 text-sm text-gray-800">
+            <ul className="list-disc space-y-2 pl-5 text-sm text-stone-800">
               {interview.data.map((s) => (
                 <li key={s}>{s}</li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-gray-600">Aucune suggestion pour le moment.</p>
+            <p className="text-sm text-stone-600">Aucune suggestion pour le moment.</p>
           )}
         </Card>
       </div>
 
-      <h2 className="mb-3 mt-8 text-lg font-semibold text-gray-900">Réponses</h2>
+      <h2 className="mb-4 mt-10 text-xl font-extrabold tracking-tight text-stone-900">Réponses du candidat</h2>
       <ol className="space-y-3">
         {order.map((o, i) => {
           const entry = questions.get(o.questionId);
@@ -183,17 +189,17 @@ async function Content({ params }: PageProps<"/tests/[id]/resultats/[attemptId]"
           const got = a ? (a.overrideScore ?? a.autoScore ?? a.aiScore) : null;
           const criteria = CriteriaSchema.safeParse(a?.aiRubricResults);
           return (
-            <li key={q.id} className="rounded-lg border border-gray-200 bg-white p-4">
+            <li key={q.id} className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-soft">
               <div className="flex flex-wrap items-start justify-between gap-2">
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-stone-600">
                   Question {i + 1} · {skill} · {QUESTION_TYPE_LABELS[data.type]} ·{" "}
                   {a ? `${a.timeSpentSec} s / ${data.suggestedTimeSec} s conseillées` : "non posée"}
                 </p>
-                <p className="text-sm font-semibold text-gray-900">
+                <p className="text-sm font-semibold text-stone-900">
                   {got === null ? (a && RUBRIC_GRADED.includes(data.type as QuestionType) ? "Correction en cours" : "—") : `${got} / ${data.points} pt`}
                 </p>
               </div>
-              <p className="mt-1 text-gray-900">{data.prompt}</p>
+              <p className="mt-1 text-stone-900">{data.prompt}</p>
 
               {isMcq(data.type) && (
                 <ul className="mt-2 space-y-1 text-sm">
@@ -201,7 +207,7 @@ async function Content({ params }: PageProps<"/tests/[id]/resultats/[attemptId]"
                     const c = data.choices?.find((x) => x.id === cid);
                     if (!c) return null;
                     return (
-                      <li key={cid} className={`rounded px-2 py-1 ${given.has(cid) ? (correct.has(cid) ? "bg-teal-50 text-teal-900" : "bg-red-50 text-red-800") : correct.has(cid) ? "text-teal-800" : "text-gray-700"}`}>
+                      <li key={cid} className={`rounded px-2 py-1 ${given.has(cid) ? (correct.has(cid) ? "bg-brand-50 text-brand-900" : "bg-red-50 text-red-800") : correct.has(cid) ? "text-brand-800" : "text-stone-700"}`}>
                         {given.has(cid) ? "● " : "○ "}
                         {c.text}
                         {correct.has(cid) && " ✓"}
@@ -224,8 +230,8 @@ async function Content({ params }: PageProps<"/tests/[id]/resultats/[attemptId]"
               )}
               {RUBRIC_GRADED.includes(data.type as QuestionType) && (
                 <div className="mt-2 space-y-2">
-                  <p className="whitespace-pre-wrap rounded-md bg-gray-50 p-3 text-sm text-gray-900">
-                    {a?.transcript ?? content?.text ?? <em className="text-gray-500">Pas de réponse</em>}
+                  <p className="whitespace-pre-wrap rounded-md bg-stone-50 p-3 text-sm text-stone-900">
+                    {a?.transcript ?? content?.text ?? <em className="text-stone-500">Pas de réponse</em>}
                   </p>
                   {a?.aiJustification && (
                     <div className="rounded-md border border-sky-100 bg-sky-50 p-3 text-sm text-sky-950">
@@ -245,7 +251,7 @@ async function Content({ params }: PageProps<"/tests/[id]/resultats/[attemptId]"
                 </div>
               )}
               {a?.overrideScore !== null && a?.overriddenBy && (
-                <p className="mt-2 text-xs text-gray-600">
+                <p className="mt-2 text-xs text-stone-600">
                   Note modifiée par {a.overriddenBy.name}
                   {a.overriddenAt && ` le ${a.overriddenAt.toLocaleDateString("fr-FR", { timeZone: "Africa/Bangui" })}`}
                   {a.aiScore !== null && ` (note de l'IA : ${a.aiScore})`}
@@ -263,7 +269,7 @@ async function Content({ params }: PageProps<"/tests/[id]/resultats/[attemptId]"
 
 export default function AttemptPage(props: PageProps<"/tests/[id]/resultats/[attemptId]">) {
   return (
-    <Suspense fallback={<p className="text-gray-600">Chargement…</p>}>
+    <Suspense fallback={<Loading />}>
       <Content {...props} />
     </Suspense>
   );

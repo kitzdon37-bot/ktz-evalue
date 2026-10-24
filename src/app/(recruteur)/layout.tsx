@@ -1,14 +1,19 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { LogOut } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/session";
+import { Logo } from "@/components/logo";
 import { logout } from "../(auth)/actions";
+import { NavLinks, NavLinksFallback } from "./nav-links";
 
-const NAV = [
-  { href: "/tableau-de-bord", label: "Tableau de bord" },
-  { href: "/tests", label: "Tests" },
-  { href: "/bibliotheque", label: "Bibliothèque" },
-  { href: "/entreprise", label: "Entreprise" },
-];
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join("");
+}
 
 // En-tête de l'espace recruteur. La partie qui dépend de l'utilisateur connecté
 // est chargée à part (Suspense) pour que le reste de la page s'affiche tout de suite.
@@ -16,14 +21,22 @@ async function UserMenu() {
   const user = await getCurrentUser();
   if (!user) return null;
   return (
-    <div className="flex items-center gap-3 text-sm">
-      <span className="hidden text-gray-700 md:inline">
-        {user.name}
-        {user.companyName && <span className="text-gray-500"> · {user.companyName}</span>}
+    <div className="flex items-center gap-3">
+      <div className="hidden text-right leading-tight md:block">
+        <p className="text-sm font-semibold text-stone-900">{user.name}</p>
+        {user.companyName && <p className="text-xs text-stone-500">{user.companyName}</p>}
+      </div>
+      <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-brand-500 to-brand-800 text-sm font-bold text-white ring-2 ring-white">
+        {initials(user.name)}
       </span>
       <form action={logout}>
-        <button type="submit" className="rounded-md border border-gray-300 px-3 py-2 text-gray-800 hover:bg-gray-100">
-          Déconnexion
+        <button
+          type="submit"
+          title="Déconnexion"
+          aria-label="Déconnexion"
+          className="grid h-9 w-9 place-items-center rounded-xl text-stone-500 transition hover:bg-stone-100 hover:text-stone-900"
+        >
+          <LogOut className="h-4 w-4" />
         </button>
       </form>
     </div>
@@ -32,30 +45,26 @@ async function UserMenu() {
 
 export default function RecruiterLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-gray-50">
-      <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
-          <Link href="/tableau-de-bord" className="text-lg font-bold text-teal-800">
-            KTZ Évalue
+    <div className="flex min-h-full flex-1 flex-col">
+      <header className="sticky top-0 z-20 border-b border-stone-200/70 bg-white/85 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+          <Link href="/tableau-de-bord" aria-label="KTZ Évalue — tableau de bord">
+            <Logo />
           </Link>
           <Suspense>
             <UserMenu />
           </Suspense>
         </div>
-        <nav className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-2 pb-2 text-sm">
-          {NAV.map((n) => (
-            <Link
-              key={n.href}
-              href={n.href}
-              prefetch={false}
-              className="whitespace-nowrap rounded-md px-3 py-2 font-medium text-gray-700 hover:bg-gray-100"
-            >
-              {n.label}
-            </Link>
-          ))}
-        </nav>
+        <div className="mx-auto max-w-6xl px-3 pb-3">
+          <Suspense fallback={<NavLinksFallback />}>
+            <NavLinks />
+          </Suspense>
+        </div>
       </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">{children}</main>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
+      <footer className="border-t border-stone-200/70 py-6 text-center text-xs text-stone-500">
+        KTZ Évalue · Tests de recrutement pour l&apos;Afrique francophone
+      </footer>
     </div>
   );
 }
