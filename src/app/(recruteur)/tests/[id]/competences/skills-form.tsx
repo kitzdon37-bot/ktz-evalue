@@ -4,6 +4,7 @@ import { useActionState, useMemo, useState } from "react";
 import { Lightbulb, Plus } from "lucide-react";
 import { ActionButton, FormMessage } from "@/components/form";
 import { btn, Card, input } from "@/components/ui";
+import { SkillInput } from "@/components/skill-input";
 import { evenWeights } from "@/lib/tests/model";
 import { suggestSkills } from "@/lib/tests/suggestions";
 import { proposeSkills, saveSkills } from "../../actions";
@@ -85,13 +86,13 @@ export function SkillsForm({
           {rows.map((r) => (
             <div key={r.key} className="grid grid-cols-[1fr_5.5rem_2.5rem] items-center gap-2 sm:grid-cols-[1fr_7rem_2.5rem]">
               <input type="hidden" name="skillId" value={r.id} />
-              <input
+              <SkillInput
                 name="skillName"
                 value={r.name}
-                onChange={(e) => update(r.key, { name: e.target.value })}
-                placeholder="Ex. : Comptabilité OHADA"
-                aria-label="Nom de la compétence"
-                className={input}
+                onChange={(v) => update(r.key, { name: v })}
+                jobTitle={jobTitle}
+                exclude={rows.filter((x) => x.key !== r.key).map((x) => x.name)}
+                placeholder="Tapez pour voir des suggestions…"
               />
               <input
                 name="skillWeight"

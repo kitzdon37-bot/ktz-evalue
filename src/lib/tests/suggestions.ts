@@ -126,6 +126,50 @@ export function suggestSkills(jobTitle: string, exclude: string[] = []): string[
   return out.slice(0, 12);
 }
 
+/** Toutes les compétences connues (catalogue + générales), sans doublon. */
+export const ALL_SKILLS: string[] = (() => {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const s of [...JOB_SUGGESTIONS.flatMap((j) => j.skills), ...GENERIC_SKILLS]) {
+    const k = normalize(s);
+    if (!seen.has(k)) {
+      seen.add(k);
+      out.push(s);
+    }
+  }
+  return out;
+})();
+
+/**
+ * Compétences qui correspondent à ce qui est tapé (« compta » → « Comptabilité OHADA… »).
+ * Sans texte, propose celles du poste. Exclut celles déjà choisies.
+ */
+export function searchSkills(query: string, opts: { jobTitle?: string; exclude?: string[]; limit?: number } = {}): string[] {
+  const { jobTitle = "", exclude = [], limit = 8 } = opts;
+  const taken = new Set(exclude.map(normalize));
+  const q = normalize(query);
+  if (!q) return suggestSkills(jobTitle, exclude).slice(0, limit);
+  const words = q.split(" ").filter(Boolean);
+  // Les compétences du poste passent en premier à score égal.
+  const jobSkills = new Set((jobTitle ? searchJobs(jobTitle, 2).flatMap((j) => j.skills) : []).map(normalize));
+  return ALL_SKILLS.filter((s) => !taken.has(normalize(s)))
+    .map((s) => {
+      const n = normalize(s);
+      const tokens = n.split(" ");
+      let score = 0;
+      if (n.startsWith(q)) score += 6;
+      // Au milieu d'un mot seulement à partir de 4 lettres (« tre » ne doit pas proposer « Entretien »).
+      if (q.length >= 4 && n.includes(q)) score += 4;
+      for (const w of words) if (tokens.some((t) => t.startsWith(w))) score += 2;
+      if (score > 0 && jobSkills.has(n)) score += 3;
+      return { s, score };
+    })
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score || a.s.localeCompare(b.s, "fr"))
+    .slice(0, limit)
+    .map((x) => x.s);
+}
+
 /** Petite description de poste prête à compléter, à partir des compétences choisies. */
 export function describeJob(jobTitle: string, skills: string[]): string {
   const list = skills.map((s) => `- ${s}`).join("\n");

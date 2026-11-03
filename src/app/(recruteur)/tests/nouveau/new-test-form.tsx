@@ -3,6 +3,7 @@
 import { useActionState, useId, useMemo, useRef, useState } from "react";
 import { Check, Lightbulb, Plus, Sparkles, Wand2 } from "lucide-react";
 import { ActionButton, FormMessage } from "@/components/form";
+import { SkillInput } from "@/components/skill-input";
 import { btn, Card, input, label, Notice } from "@/components/ui";
 import {
   DURATIONS,
@@ -13,7 +14,7 @@ import {
   QUESTION_TYPE_LABELS,
   QUESTION_TYPES,
 } from "@/lib/tests/model";
-import { bestJob, describeJob, searchJobs, suggestSkills } from "@/lib/tests/suggestions";
+import { bestJob, describeJob, normalize, searchJobs, searchSkills, suggestSkills } from "@/lib/tests/suggestions";
 import { createTest } from "../actions";
 
 const MAX_SKILLS = 6;
@@ -72,10 +73,18 @@ export function NewTestForm({ aiAvailable }: { aiAvailable: boolean }) {
   };
   const toggle = (s: string) =>
     setChosen((c) => (c.includes(s) ? c.filter((x) => x !== s) : c.length >= MAX_SKILLS ? c : [...c, s]));
-  const addCustom = () => {
-    const s = custom.trim();
-    if (s && !chosen.includes(s) && chosen.length < MAX_SKILLS) setChosen([...chosen, s]);
+  const addSkill = (raw: string) => {
+    const s = raw.trim();
+    if (s.length >= 2) setChosen((c) => (c.includes(s) || c.length >= MAX_SKILLS ? c : [...c, s]));
     setCustom("");
+  };
+  // Bouton « Ajouter » : prend la meilleure suggestion si le texte tapé est un début de mot
+  // (« nego » → « Négociation »), sinon le texte tel quel ; jamais un doublon d'une compétence déjà choisie.
+  const addCustom = () => {
+    const q = normalize(custom);
+    if (q.length < 2 || chosen.some((c) => normalize(c).includes(q))) return setCustom("");
+    const [best] = searchSkills(custom, { jobTitle: title, exclude: chosen, limit: 1 });
+    addSkill(best && normalize(best).includes(q) ? best : custom);
   };
 
   return (
@@ -198,19 +207,16 @@ export function NewTestForm({ aiAvailable }: { aiAvailable: boolean }) {
             </div>
 
             <div className="mt-3 flex gap-2">
-              <input
+              <SkillInput
+                className="flex-1"
                 value={custom}
-                onChange={(e) => setCustom(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addCustom();
-                  }
-                }}
-                placeholder="Ajouter une autre compétence…"
-                aria-label="Ajouter une compétence"
-                maxLength={80}
-                className={`${input} py-2 text-sm`}
+                onChange={setCustom}
+                onPick={(s) => addSkill(s)}
+                jobTitle={title}
+                exclude={chosen}
+                disabled={chosen.length >= MAX_SKILLS}
+                placeholder="Ajouter une autre compétence : tapez pour voir des suggestions…"
+                ariaLabel="Ajouter une compétence"
               />
               <button type="button" onClick={addCustom} className={btn.secondary} disabled={!custom.trim() || chosen.length >= MAX_SKILLS}>
                 Ajouter

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bestJob, describeJob, normalize, searchJobs, suggestSkills } from "@/lib/tests/suggestions";
+import { ALL_SKILLS, bestJob, describeJob, normalize, searchJobs, searchSkills, suggestSkills } from "@/lib/tests/suggestions";
 
 describe("suggestions de postes et de compétences", () => {
   it("ignore les accents et la casse", () => {
@@ -31,6 +31,32 @@ describe("suggestions de postes et de compétences", () => {
 
   it("propose au moins des compétences générales pour un poste inconnu", () => {
     expect(suggestSkills("Astronaute")).toContain("Travail en équipe");
+  });
+
+  it("trouve des compétences pendant la frappe, sans accents ni casse", () => {
+    expect(searchSkills("compta")).toContain("Comptabilité OHADA (SYSCOHADA)");
+    expect(searchSkills("securite").some((s) => s.includes("Sécurité"))).toBe(true);
+    expect(searchSkills("excel", { limit: 3 })).toHaveLength(3);
+  });
+
+  it("ne propose pas de mots qui contiennent seulement les lettres au milieu", () => {
+    const r = searchSkills("tre");
+    expect(r).toContain("Trésorerie");
+    expect(r.some((s) => s.startsWith("Entretien"))).toBe(false);
+  });
+
+  it("exclut les compétences déjà choisies et met celles du poste en premier", () => {
+    expect(searchSkills("compta", { exclude: ["Comptabilité OHADA (SYSCOHADA)"] })).not.toContain("Comptabilité OHADA (SYSCOHADA)");
+    expect(searchSkills("gestion", { jobTitle: "Magasinier" })[0]).toBe("Gestion des stocks (FIFO, inventaires)");
+  });
+
+  it("sans texte, propose les compétences du poste", () => {
+    expect(searchSkills("", { jobTitle: "Chauffeur" })[0]).toBe("Code de la route");
+  });
+
+  it("le catalogue de compétences n'a pas de doublon", () => {
+    expect(new Set(ALL_SKILLS.map(normalize)).size).toBe(ALL_SKILLS.length);
+    expect(ALL_SKILLS.length).toBeGreaterThan(150);
   });
 
   it("prépare une description qui reprend les compétences", () => {
