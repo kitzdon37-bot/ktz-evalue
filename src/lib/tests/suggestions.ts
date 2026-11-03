@@ -170,6 +170,27 @@ export function searchSkills(query: string, opts: { jobTitle?: string; exclude?:
     .map((x) => x.s);
 }
 
+// Mots trop courants pour rapprocher deux compétences (« Gestion de caisse » ≠ « Gestion des stocks »).
+const WEAK_WORDS = new Set(["et", "de", "des", "du", "la", "le", "les", "l", "d", "a", "en", "au", "aux", "pour", "sur", "avec", "gestion", "base"]);
+
+function strongTokens(s: string) {
+  return new Set(normalize(s).split(" ").filter((t) => t.length > 1 && !WEAK_WORDS.has(t)));
+}
+
+/**
+ * Ressemblance entre deux noms de compétence, de 0 à 1 :
+ * 1 si identiques (accents et parenthèses ignorés), sinon part de mots significatifs en commun.
+ */
+export function skillSimilarity(a: string, b: string): number {
+  if (normalize(a) === normalize(b)) return 1;
+  const ta = strongTokens(a);
+  const tb = strongTokens(b);
+  if (!ta.size || !tb.size) return 0;
+  let common = 0;
+  for (const t of ta) if (tb.has(t)) common++;
+  return common / Math.min(ta.size, tb.size);
+}
+
 /** Petite description de poste prête à compléter, à partir des compétences choisies. */
 export function describeJob(jobTitle: string, skills: string[]): string {
   const list = skills.map((s) => `- ${s}`).join("\n");

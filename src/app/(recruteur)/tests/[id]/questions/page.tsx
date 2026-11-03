@@ -18,7 +18,8 @@ export const maxDuration = 300;
 
 async function Content({ params, searchParams }: PageProps<"/tests/[id]/questions">) {
   const { id } = await params;
-  const { manquantes } = await searchParams;
+  const { manquantes, banque, sans, ia, retirees, ajoutees } = await searchParams;
+  const list = (v: string | string[] | undefined) => (v ? String(v).split("|").join(", ") : "");
   const user = await requireEditor();
   const test = await getCompanyTest(id, user.companyId);
   if (test.status !== "DRAFT") redirect(`/tests/${id}`);
@@ -56,6 +57,15 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/question
       <TestSteps testId={id} current="questions" />
 
       <div className="mb-4 space-y-3">
+        {banque !== undefined && (
+          <Notice tone={sans ? "warning" : "success"}>
+            {ia === "indisponible" && <>L&apos;IA en ligne n&apos;est pas disponible pour le moment : le test a été préparé gratuitement avec la banque de questions KTZ. </>}
+            <strong>{banque} question(s)</strong> ajoutée(s) depuis la banque KTZ. Relisez-les et adaptez-les à votre poste si besoin.
+            {retirees && <> Compétences retirées faute de questions dans la banque : <strong>{list(retirees)}</strong> (vous pouvez les rajouter et écrire leurs questions).</>}
+            {ajoutees && <> Compétences ajoutées pour compléter le test : <strong>{list(ajoutees)}</strong>.</>}
+            {sans && <> Pas encore de questions dans la banque pour : <strong>{list(sans)}</strong> — ajoutez-les à la main ci-dessous.</>}
+          </Notice>
+        )}
         {manquantes && (
           <Notice tone="warning">
             L&apos;IA n&apos;a pas pu produire {manquantes} question(s) conforme(s). Complétez à la main ou relancez la

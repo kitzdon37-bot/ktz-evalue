@@ -26,6 +26,8 @@ import {
 } from "@/lib/tests/model";
 import { blankQuestion, parseQuestionForm } from "@/lib/tests/question-form";
 import { copySkills, fromDb, getCompanyTest, toDb, type CompanyTest } from "@/lib/tests/repository";
+import { fillFromBank } from "@/lib/tests/bank";
+import { suggestSkills } from "@/lib/tests/suggestions";
 import type { FormState } from "@/lib/auth/schemas";
 
 function aiErrorMessage(e: unknown): string {
@@ -75,8 +77,9 @@ const CreateTestSchema = z.object({
   }),
   questionCount: z.coerce.number().int().min(10, { error: "10 questions minimum." }).max(30, { error: "30 questions maximum." }),
   questionTypes: z.array(z.enum(QUESTION_TYPES)).min(1, { error: "Cochez au moins un type de question." }),
-  // ai : l'IA propose les compétences ; ai_full : compétences + questions ; manual : sans IA.
-  mode: z.enum(["ai", "ai_full", "manual"]),
+  // ai : l'IA propose les compétences ; ai_full : compétences + questions ;
+  // bank : questions de la banque KTZ (gratuit, sans IA) ; manual : sans IA.
+  mode: z.enum(["ai", "ai_full", "bank", "manual"]),
   // Compétences choisies parmi les suggestions (ou ajoutées à la main), 6 au plus.
   suggestedSkills: z.array(z.string().trim().min(2).max(80)).max(6, { error: "6 compétences maximum." }),
 });
@@ -113,18 +116,19 @@ export async function createTest(_state: FormState, formData: FormData): Promise
     include: { skills: { include: { questions: true } } },
   });
 
-  // Compétences choisies par le recruteur : gardées telles quelles (poids égaux),
-  // sauf s'il demande explicitement une proposition de l'IA.
-  const useChosen = d.suggestedSkills.length > 0 && d.mode !== "ai";
-  if (useChosen) {
-    const w = evenWeights(d.suggestedSkills.length);
+  // Compétences : celles choisies par le recruteur (poids égaux), sauf s'il demande une
+  // proposition de l'IA ; pour la banque sans choix, celles du métier le plus proche.
+  let chosen = d.mode === "ai" ? [] : d.suggestedSkills;
+  if (d.mode === "bank" && chosen.length === 0) chosen = suggestSkills(d.jobTitle).slice(0, 4);
+  if (chosen.length > 0) {
+    const w = evenWeights(chosen.length);
     await db.skill.createMany({
-      data: d.suggestedSkills.map((name, i) => ({ testId: test.id, name, weight: w[i], position: i })),
+      data: chosen.map((name, i) => ({ testId: test.id, name, weight: w[i], position: i })),
     });
   }
 
   let aiError = "";
-  if (d.mode === "ai" || (d.mode === "ai_full" && !useChosen)) {
+  if (d.mode === "ai" || (d.mode === "ai_full" && chosen.length === 0)) {
     try {
       const skills = await generateSkills(await contextFor(test, user.companyId));
       await db.skill.createMany({
@@ -136,12 +140,34 @@ export async function createTest(_state: FormState, formData: FormData): Promise
     }
   }
 
-  // Test complet : on enchaîne directement sur la génération des questions.
-  if (d.mode === "ai_full" && !aiError) {
-    const result = await generateAllQuestions(test.id); // redirige vers les questions si tout va bien
-    if (result?.message) redirect(`/tests/${test.id}/competences?ia=indisponible`);
+  // Test complet par l'IA : on enchaîne sur les questions ; si l'IA en ligne échoue
+  // (crédit épuisé, panne…), on prépare le test gratuitement avec la banque KTZ.
+  if (d.mode === "ai_full") {
+    if (!aiError) {
+      const result = await generateAllQuestions(test.id); // redirige vers les questions si tout va bien
+      if (!result?.message) redirect(`/tests/${test.id}/questions`);
+    }
+    if ((await db.skill.count({ where: { testId: test.id } })) === 0) {
+      // Aucune compétence (l'IA n'a pas pu les proposer) : on prend celles du métier le plus proche.
+      const fallback = suggestSkills(d.jobTitle).slice(0, 4);
+      const w = evenWeights(fallback.length);
+      await db.skill.createMany({ data: fallback.map((name, i) => ({ testId: test.id, name, weight: w[i], position: i })) });
+    }
+    return redirectAfterBank(test.id, user.companyId, true);
   }
+  if (d.mode === "bank") return redirectAfterBank(test.id, user.companyId, false);
   redirect(`/tests/${test.id}/competences${aiError}`);
+}
+
+// Remplit le test depuis la banque KTZ, puis ouvre la relecture des questions avec un message.
+async function redirectAfterBank(testId: string, companyId: string, aiUnavailable: boolean): Promise<never> {
+  const r = await fillFromBank(testId, companyId);
+  const params = new URLSearchParams({ banque: String(r.added) });
+  if (r.uncovered.length) params.set("sans", r.uncovered.join("|"));
+  if (r.removed.length) params.set("retirees", r.removed.join("|"));
+  if (r.extra.length) params.set("ajoutees", r.extra.join("|"));
+  if (aiUnavailable) params.set("ia", "indisponible");
+  redirect(`/tests/${testId}/questions?${params}`);
 }
 
 // ───── Étape 2 : compétences ─────
@@ -175,6 +201,10 @@ export async function saveSkills(testId: string, _state: FormState, formData: Fo
 
   if (formData.get("next") === "generate") {
     return generateAllQuestions(testId);
+  }
+  if (formData.get("next") === "bank") {
+    const { user } = await editableTest(testId);
+    return redirectAfterBank(testId, user.companyId, false);
   }
   if (formData.get("next") === "manual") redirect(`/tests/${testId}/questions`);
   refresh();

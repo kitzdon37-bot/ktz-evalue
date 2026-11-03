@@ -1,5 +1,41 @@
 import { describe, expect, it } from "vitest";
-import { ALL_SKILLS, bestJob, describeJob, normalize, searchJobs, searchSkills, suggestSkills } from "@/lib/tests/suggestions";
+import { ALL_SKILLS, bestJob, describeJob, JOB_SUGGESTIONS, normalize, searchJobs, searchSkills, skillSimilarity, suggestSkills } from "@/lib/tests/suggestions";
+// Modèles de la banque, écrits en JavaScript (prisma/seed).
+import { TEMPLATES_2 } from "../prisma/seed/templates-2.mjs";
+
+type T = { profession: string; skills: { name: string; weight: number; questions: { type: string; answer?: unknown; choices?: string[] }[] }[] };
+
+describe("banque de questions (modèles de la série 2)", () => {
+  it("rapproche les compétences sans faux positifs", () => {
+    expect(skillSimilarity("Comptabilité OHADA (SYSCOHADA)", "Comptabilité OHADA")).toBe(1);
+    expect(skillSimilarity("Fiscalité et TVA", "Fiscalité et paie")).toBeGreaterThanOrEqual(0.5);
+    expect(skillSimilarity("Gestion de caisse", "Gestion des stocks (FIFO, inventaires)")).toBe(0);
+    // Un seul mot en commun sur deux : trop faible pour rapprocher deux métiers différents (seuil 0,75).
+    expect(skillSimilarity("Contrôle des accès", "Contrôle et rigueur")).toBeLessThan(0.75);
+    expect(skillSimilarity("Contrôle interne et audit", "Contrôle interne")).toBe(1);
+  });
+
+  it("chaque modèle correspond à un métier du catalogue, avec des compétences du catalogue", () => {
+    const titles = new Set(JOB_SUGGESTIONS.map((j) => j.title));
+    const skills = new Set(ALL_SKILLS.map(normalize));
+    for (const t of TEMPLATES_2 as T[]) {
+      expect(titles.has(t.profession), t.profession).toBe(true);
+      for (const s of t.skills) expect(skills.has(normalize(s.name)), s.name).toBe(true);
+    }
+  });
+
+  it("chaque modèle est cohérent : poids à 100 %, au moins 10 questions, bonnes réponses valides", () => {
+    for (const t of TEMPLATES_2 as T[]) {
+      expect(t.skills.reduce((a, s) => a + s.weight, 0), t.profession).toBe(100);
+      const qs = t.skills.flatMap((s) => s.questions);
+      expect(qs.length, t.profession).toBeGreaterThanOrEqual(10);
+      for (const q of qs) {
+        if (q.type === "MCQ_SINGLE") expect((q.answer as number) < (q.choices?.length ?? 0)).toBe(true);
+        if (q.type === "TRUE_FALSE") expect(typeof q.answer).toBe("boolean");
+      }
+    }
+  });
+});
 
 describe("suggestions de postes et de compétences", () => {
   it("ignore les accents et la casse", () => {

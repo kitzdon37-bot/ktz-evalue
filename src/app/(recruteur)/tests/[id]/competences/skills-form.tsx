@@ -147,7 +147,10 @@ export function SkillsForm({
               {hasQuestions ? "Compléter les questions avec l'IA" : "Générer les questions avec l'IA"}
             </ActionButton>
           )}
-          <ActionButton name="next" value="manual" className={aiAvailable ? btn.secondary : btn.primary}>
+          <ActionButton name="next" value="bank" className={aiAvailable ? btn.secondary : btn.primary} pendingText="Préparation depuis la banque…">
+            {hasQuestions ? "Compléter avec la banque KTZ (gratuit)" : "Générer depuis la banque KTZ (gratuit)"}
+          </ActionButton>
+          <ActionButton name="next" value="manual" className={btn.secondary}>
             {hasQuestions ? "Voir les questions" : "Écrire les questions moi-même"}
           </ActionButton>
           <ActionButton name="next" value="save" className={btn.secondary}>

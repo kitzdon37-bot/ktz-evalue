@@ -2,10 +2,10 @@
 // Format compact : `answer` = indice du bon choix (QCM), true/false (vrai/faux),
 // { value, tolerance } (réponse courte) ; `rubric` = [[critère, points], …] pour les questions ouvertes.
 
-const mcq = (prompt, choices, answer, explanation, time = 60) => ({ type: "MCQ_SINGLE", prompt, choices, answer, explanation, time, points: 1 });
-const tf = (prompt, answer, explanation, time = 45) => ({ type: "TRUE_FALSE", prompt, answer, explanation, time, points: 1 });
-const short = (prompt, value, explanation, time = 120, tolerance = null) => ({ type: "SHORT_ANSWER", prompt, answer: { value, tolerance }, explanation, time, points: 2 });
-const open = (type, prompt, rubric, example, time = 300) => ({
+export const mcq = (prompt, choices, answer, explanation, time = 60) => ({ type: "MCQ_SINGLE", prompt, choices, answer, explanation, time, points: 1 });
+export const tf = (prompt, answer, explanation, time = 45) => ({ type: "TRUE_FALSE", prompt, answer, explanation, time, points: 1 });
+export const short = (prompt, value, explanation, time = 120, tolerance = null) => ({ type: "SHORT_ANSWER", prompt, answer: { value, tolerance }, explanation, time, points: 2 });
+export const open = (type, prompt, rubric, example, time = 300) => ({
   type,
   prompt,
   rubric,

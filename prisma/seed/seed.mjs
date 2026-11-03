@@ -3,7 +3,10 @@
 import { config } from "dotenv";
 import pg from "pg";
 import { randomBytes } from "node:crypto";
-import { TEMPLATES } from "./templates.mjs";
+import { TEMPLATES as BASE_TEMPLATES } from "./templates.mjs";
+import { TEMPLATES_2 } from "./templates-2.mjs";
+
+const TEMPLATES = [...BASE_TEMPLATES, ...TEMPLATES_2];
 
 config({ path: ".env.local", quiet: true });
 

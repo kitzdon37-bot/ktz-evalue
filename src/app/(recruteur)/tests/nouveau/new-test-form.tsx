@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useId, useMemo, useRef, useState } from "react";
-import { Check, Lightbulb, Plus, Sparkles, Wand2 } from "lucide-react";
+import { Check, Library, Lightbulb, Plus, Sparkles, Wand2 } from "lucide-react";
 import { ActionButton, FormMessage } from "@/components/form";
 import { SkillInput } from "@/components/skill-input";
 import { btn, Card, input, label, Notice } from "@/components/ui";
@@ -297,11 +297,24 @@ export function NewTestForm({ aiAvailable }: { aiAvailable: boolean }) {
           <p className="mt-1 text-sm text-stone-600">Dans tous les cas, vous relirez chaque question avant de publier le test.</p>
         </div>
         {!aiAvailable && (
-          <Notice tone="warning">
-            La génération par IA n&apos;est pas encore activée (clé Anthropic manquante). Vous pouvez continuer avec les compétences
-            choisies et écrire les questions vous-même, ou partir d&apos;un modèle de la bibliothèque.
+          <Notice tone="info">
+            La génération par IA en ligne n&apos;est pas activée. Utilisez la <strong>banque de questions KTZ</strong> : gratuite et
+            instantanée, elle prépare un test complet à partir des compétences choisies.
           </Notice>
         )}
+        <ActionButton
+          name="mode"
+          value="bank"
+          className={`${aiAvailable ? btn.secondary : btn.primary} w-full flex-col items-start gap-1 px-5 py-4 text-left`}
+          pendingText="Préparation du test depuis la banque…"
+        >
+          <span className="flex items-center gap-2 text-base">
+            <Library className="h-4 w-4" /> Générer depuis la banque KTZ (gratuit)
+          </span>
+          <span className={`text-xs font-normal ${aiAvailable ? "text-stone-500" : "text-white/85"}`}>
+            Questions rédigées à l&apos;avance pour les métiers de la RCA, assemblées selon vos compétences. Instantané.
+          </span>
+        </ActionButton>
         <div className="grid gap-3 lg:grid-cols-3">
           <ActionButton
             name="mode"
