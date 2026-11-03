@@ -1,9 +1,11 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
+import { Lightbulb, Plus } from "lucide-react";
 import { ActionButton, FormMessage } from "@/components/form";
 import { btn, Card, input } from "@/components/ui";
 import { evenWeights } from "@/lib/tests/model";
+import { suggestSkills } from "@/lib/tests/suggestions";
 import { proposeSkills, saveSkills } from "../../actions";
 
 type Row = { key: string; id: string; name: string; weight: number; questions: number };
@@ -16,11 +18,13 @@ export function SkillsForm({
   skills,
   aiAvailable,
   hasQuestions,
+  jobTitle = "",
 }: {
   testId: string;
   skills: { id: string; name: string; weight: number; questions: number }[];
   aiAvailable: boolean;
   hasQuestions: boolean;
+  jobTitle?: string;
 }) {
   const [rows, setRows] = useState<Row[]>(() =>
     skills.length
@@ -37,8 +41,39 @@ export function SkillsForm({
     setRows(rows.map((r, i) => ({ ...r, weight: w[i] })));
   };
 
+  // Propositions selon le poste (sans IA) ; un clic ajoute la compétence et répartit les poids.
+  const proposals = useMemo(() => suggestSkills(jobTitle, rows.map((r) => r.name)).slice(0, 10), [jobTitle, rows]);
+  const addSuggestion = (name: string) => {
+    const filled = rows.filter((r) => r.name.trim());
+    if (filled.length >= 6) return;
+    const next = [...filled, { key: newKey(), id: "", name, weight: 0, questions: 0 }];
+    const w = evenWeights(next.length);
+    setRows(next.map((r, i) => ({ ...r, weight: w[i] })));
+  };
+
   return (
     <div className="space-y-4">
+      {proposals.length > 0 && (
+        <div className="rounded-2xl border border-brand-100 bg-brand-50/50 p-4 sm:p-5">
+          <p className="flex items-center gap-2 text-sm font-bold text-stone-900">
+            <Lightbulb className="h-4 w-4 text-brand-600" /> Suggestions pour ce poste
+          </p>
+          <p className="mt-1 text-sm text-stone-600">Un clic ajoute la compétence et répartit les poids également (6 compétences au plus).</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {proposals.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => addSuggestion(s)}
+                disabled={rows.filter((r) => r.name.trim()).length >= 6}
+                className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 transition hover:border-brand-300 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Plus className="h-3.5 w-3.5" /> {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <form action={action} className="space-y-4">
         <FormMessage state={state} />
         <Card className="space-y-3">

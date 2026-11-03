@@ -65,7 +65,7 @@ export function CompanyForm({
             id="primaryColor"
             name="primaryColor"
             type="color"
-            defaultValue={values.primaryColor || "#0f766e"}
+            defaultValue={values.primaryColor || "#ea580c"}
             className="mt-1 h-11 w-20 rounded-md border border-stone-300"
           />
           <Errors list={state?.errors?.primaryColor} />

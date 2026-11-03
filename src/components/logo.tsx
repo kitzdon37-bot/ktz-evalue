@@ -4,8 +4,8 @@ export function LogoMark({ className = "h-8 w-8" }: { className?: string }) {
     <svg viewBox="0 0 40 40" className={className} aria-hidden="true">
       <defs>
         <linearGradient id="ktz-g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#22a687" />
-          <stop offset="1" stopColor="#13564a" />
+          <stop offset="0" stopColor="#fb923c" />
+          <stop offset="1" stopColor="#c2410c" />
         </linearGradient>
       </defs>
       <rect x="2" y="2" width="36" height="36" rx="11" fill="url(#ktz-g)" />
@@ -20,7 +20,7 @@ export function Logo({ light = false, className = "" }: { light?: boolean; class
     <span className={`inline-flex items-center gap-2.5 ${className}`}>
       <LogoMark />
       <span className={`text-lg font-extrabold tracking-tight ${light ? "text-white" : "text-stone-900"}`}>
-        KTZ <span className={light ? "text-sun-300" : "text-brand-600"}>Évalue</span>
+        KTZ <span className={light ? "text-brand-400" : "text-brand-600"}>Évalue</span>
       </span>
     </span>
   );

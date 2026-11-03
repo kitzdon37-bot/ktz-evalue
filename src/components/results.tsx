@@ -1,8 +1,9 @@
 // Petits éléments d'affichage des résultats (barres de score, badges).
+// Le vert reste réservé au sens « bon / réussi / fiable » (l'orange est la couleur de la marque).
 import { Hourglass, ShieldAlert, ShieldCheck, ShieldQuestion } from "lucide-react";
 
 function tone(v: number) {
-  return v >= 70 ? "from-brand-400 to-brand-600" : v >= 50 ? "from-sun-300 to-sun-500" : "from-red-400 to-red-500";
+  return v >= 70 ? "from-emerald-400 to-emerald-600" : v >= 50 ? "from-sun-300 to-sun-500" : "from-red-400 to-red-500";
 }
 
 export function ScoreBar({ score, label }: { score: number | null; label?: string }) {
@@ -23,7 +24,7 @@ export function ScoreBar({ score, label }: { score: number | null; label?: strin
 }
 
 const RELIABILITY: Record<string, { cls: string; icon: typeof ShieldCheck }> = {
-  HIGH: { cls: "bg-brand-50 text-brand-800 ring-brand-200", icon: ShieldCheck },
+  HIGH: { cls: "bg-emerald-50 text-emerald-800 ring-emerald-200", icon: ShieldCheck },
   TO_CHECK: { cls: "bg-sun-50 text-sun-700 ring-sun-200", icon: ShieldQuestion },
   LOW: { cls: "bg-red-50 text-red-700 ring-red-200", icon: ShieldAlert },
 };
@@ -55,7 +56,7 @@ export function GlobalScore({ score, pending, passed }: { score: number | null; 
       <span className="text-2xl font-extrabold tracking-tight text-stone-900">{Math.round(score)}</span>
       <span className="text-sm font-medium text-stone-400">/100</span>
       {passed !== null && (
-        <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${passed ? "bg-brand-50 text-brand-800" : "bg-red-50 text-red-700"}`}>
+        <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${passed ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-700"}`}>
           {passed ? "Réussi" : "Non réussi"}
         </span>
       )}

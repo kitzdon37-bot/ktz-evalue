@@ -23,7 +23,7 @@ export type CandidateReport = {
 
 // Rapport PDF d'un candidat : logo, scores, fiabilité, points forts et points à vérifier en entretien.
 export function renderCandidateReport(r: CandidateReport): Promise<Buffer> {
-  const color = /^#[0-9a-fA-F]{6}$/.test(r.companyColor ?? "") ? r.companyColor! : "#0f766e";
+  const color = /^#[0-9a-fA-F]{6}$/.test(r.companyColor ?? "") ? r.companyColor! : "#ea580c";
   const doc = new PDFDocument({ size: "A4", margin: 50, info: { Title: `${r.candidateName} — ${r.testTitle}`, Author: "KTZ Évalue" } });
   const chunks: Buffer[] = [];
   doc.on("data", (c: Buffer) => chunks.push(c));

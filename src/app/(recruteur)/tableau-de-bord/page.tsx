@@ -76,12 +76,13 @@ async function Dashboard() {
   return (
     <>
       {/* Bandeau d'accueil */}
-      <section className="relative mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-brand-900 via-brand-800 to-brand-600 px-6 py-8 text-white shadow-lift sm:px-10">
-        <div className="bg-pattern absolute inset-0 opacity-50" aria-hidden="true" />
-        <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-sun-400/20 blur-3xl" aria-hidden="true" />
+      <section className="relative mb-8 overflow-hidden rounded-3xl bg-ink-900 px-6 py-8 text-white shadow-lift sm:px-10">
+        <div className="bg-pattern absolute inset-0 opacity-40" aria-hidden="true" />
+        <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-brand-500/40 blur-3xl" aria-hidden="true" />
+        <div className="absolute -bottom-24 left-1/4 h-56 w-56 rounded-full bg-sun-400/10 blur-3xl" aria-hidden="true" />
         <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-sm font-semibold text-sun-200">{user.companyName}</p>
+            <p className="text-sm font-semibold text-brand-300">{user.companyName}</p>
             <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">
               {greeting()} {user.name.split(" ")[0]}
             </h1>

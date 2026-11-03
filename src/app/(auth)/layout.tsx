@@ -13,20 +13,24 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <main className="grid min-h-full flex-1 lg:grid-cols-[1fr_1.1fr]">
       {/* Panneau de présentation (ordinateur seulement) */}
-      <aside className="relative hidden overflow-hidden bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 p-12 text-white lg:flex lg:flex-col lg:justify-between">
-        <div className="bg-pattern absolute inset-0 opacity-60" aria-hidden="true" />
-        <div className="absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-sun-400/20 blur-3xl" aria-hidden="true" />
+      <aside className="relative hidden overflow-hidden bg-ink-900 p-12 text-white lg:flex lg:flex-col lg:justify-between">
+        {/* Photo d'une équipe en réunion, sous un voile sombre */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/images/recruteurs-resultats.jpg" alt="" aria-hidden="true" className="kenburns absolute inset-0 h-full w-full object-cover opacity-35" />
+        <div className="absolute inset-0 bg-gradient-to-br from-ink-950/95 via-ink-900/85 to-ink-900/60" aria-hidden="true" />
+        <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-brand-500/30 blur-3xl" aria-hidden="true" />
+        <div className="absolute -left-20 top-1/3 h-72 w-72 rounded-full bg-sun-400/10 blur-3xl" aria-hidden="true" />
         <Link href="/" className="relative">
           <Logo light />
         </Link>
         <div className="relative">
           <h2 className="text-3xl font-extrabold leading-tight tracking-tight">
-            Recrutez sur les compétences, <span className="text-sun-300">pas seulement sur le CV.</span>
+            Recrutez sur les compétences, <span className="text-brand-400">pas seulement sur le CV.</span>
           </h2>
           <ul className="mt-8 space-y-4">
             {POINTS.map((p) => (
               <li key={p} className="flex items-start gap-3 text-white/85">
-                <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand-400/25 text-brand-200">
+                <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand-500 text-white">
                   <Check className="h-3.5 w-3.5" strokeWidth={3} />
                 </span>
                 {p}

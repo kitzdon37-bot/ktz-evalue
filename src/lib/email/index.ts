@@ -47,7 +47,7 @@ export function linkEmail(opts: { to: string; subject: string; intro: string; la
     text: `${opts.intro}\n\n${opts.label} : ${opts.url}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez cet email.\n\nKTZ Évalue`,
     html: `<div style="font-family:Arial,sans-serif;font-size:16px;color:#1f2937;max-width:520px">
 <p>${intro}</p>
-<p><a href="${opts.url}" style="display:inline-block;background:#0f766e;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none">${escapeHtml(opts.label)}</a></p>
+<p><a href="${opts.url}" style="display:inline-block;background:#ea580c;color:#fff;padding:12px 22px;border-radius:999px;font-weight:bold;text-decoration:none">${escapeHtml(opts.label)}</a></p>
 <p style="font-size:13px;color:#6b7280">Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</p>
 <p style="font-size:13px;color:#6b7280">KTZ Évalue</p></div>`,
   };

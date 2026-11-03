@@ -1,21 +1,27 @@
 @import "tailwindcss";
 
-/* Identité visuelle de KTZ Évalue :
-   - « brand » : vert émeraude profond (confiance, sérieux) ;
-   - « sun » : ocre doré (chaleur, réussite), pour les accents ;
+/* Identité visuelle de KTZ Évalue, alignée sur la famille KTZ (KTZ Emploi, KTZ Group) :
+   - « brand » : orange KTZ (énergie, ambition) ;
+   - « sun » : or chaud, pour les accents ;
+   - « ink » : anthracite profond pour les bandeaux sombres ;
    - neutres « stone », légèrement chauds. */
 @theme {
-  --color-brand-50: #effcf8;
-  --color-brand-100: #d8f6ec;
-  --color-brand-200: #b2ecd9;
-  --color-brand-300: #7ddcc0;
-  --color-brand-400: #45c3a2;
-  --color-brand-500: #22a687;
-  --color-brand-600: #15866e;
-  --color-brand-700: #136b5a;
-  --color-brand-800: #13564a;
-  --color-brand-900: #12473e;
-  --color-brand-950: #062a24;
+  --color-brand-50: #fff7ed;
+  --color-brand-100: #ffedd5;
+  --color-brand-200: #fed7aa;
+  --color-brand-300: #fdba74;
+  --color-brand-400: #fb923c;
+  --color-brand-500: #f97316;
+  --color-brand-600: #ea580c;
+  --color-brand-700: #c2410c;
+  --color-brand-800: #9a3412;
+  --color-brand-900: #7c2d12;
+  --color-brand-950: #431407;
+
+  --color-ink-700: #2a2622;
+  --color-ink-800: #1c1917;
+  --color-ink-900: #13110f;
+  --color-ink-950: #0b0a09;
 
   --color-sun-50: #fffbeb;
   --color-sun-100: #fef3c7;
@@ -53,4 +59,66 @@ body {
 :focus-visible {
   outline: 2px solid var(--color-brand-500);
   outline-offset: 2px;
+}
+
+/* ── Animations du site public (voir components/reveal.tsx) ─────────────────
+   Rien n'est masqué tant que le JavaScript n'a pas ajouté .anim-ready :
+   sans JS, tout reste visible. */
+.anim-ready [data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), transform 1s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+.anim-ready [data-reveal].in { opacity: 1; transform: none; }
+
+/* Photos : dévoilement en rideau, puis léger zoom au survol */
+[data-photo] { overflow: hidden; }
+[data-photo] img { transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1); }
+.anim-ready [data-photo] img {
+  clip-path: inset(0 0 100% 0);
+  transform: scale(1.18);
+  transition: clip-path 1.2s cubic-bezier(0.77, 0, 0.18, 1), transform 1.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.anim-ready [data-photo].in img { clip-path: inset(0 0 0 0); transform: scale(1); }
+.group:hover [data-photo] img, .anim-ready .group:hover [data-photo].in img { transform: scale(1.06); transition-duration: 0.9s; }
+
+[data-parallax] { transform: scale(1.15); will-change: transform; }
+
+/* Zoom lent et continu sur une photo (Ken Burns) */
+@keyframes kenburns { from { transform: scale(1); } to { transform: scale(1.1) translate(-1.5%, -1%); } }
+.kenburns { animation: kenburns 22s ease-in-out infinite alternate; }
+
+/* Cartes flottantes */
+@keyframes floatY { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.float-y { animation: floatY 5s ease-in-out infinite; }
+.float-y-slow { animation: floatY 7s ease-in-out 1s infinite; }
+
+/* Entrée du bandeau principal au chargement */
+@keyframes riseIn { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+.rise { animation: riseIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i, 0) * 110ms); }
+
+/* Petite étiquette au-dessus des titres */
+@layer components {
+  .eyebrow { display: inline-flex; align-items: center; gap: 0.6rem; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-brand-600); }
+  .eyebrow::before { content: ""; width: 1.5rem; height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--color-brand-500), var(--color-sun-400)); }
+}
+
+/* Point « en direct » */
+.live-dot { position: relative; width: 8px; height: 8px; border-radius: 9999px; background: var(--color-brand-400); flex-shrink: 0; }
+.live-dot::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--color-brand-400); animation: livePulse 2s ease-out infinite; }
+@keyframes livePulse { to { transform: scale(3); opacity: 0; } }
+
+/* Reflet qui traverse un bouton au survol */
+.btn-shine { position: relative; overflow: hidden; isolation: isolate; }
+.btn-shine::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.45) 50%, transparent 70%); transform: translateX(-120%); transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
+.btn-shine:hover::after { transform: translateX(120%); }
+
+/* Ligne qui relie les étapes, dessinée à l'apparition */
+.anim-ready [data-draw] { transform: scaleX(0); transform-origin: left; transition: transform 1.4s cubic-bezier(0.22, 1, 0.36, 1) 0.2s; }
+.anim-ready [data-draw].in { transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .kenburns, .float-y, .float-y-slow, .rise, .live-dot::after { animation: none !important; }
+  [data-parallax] { transform: none !important; }
 }

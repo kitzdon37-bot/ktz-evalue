@@ -128,6 +128,7 @@ function render(inv: LoadedInvitation, attempt: LoadedAttempt | null, error?: st
       question: { ...q.data, id: q.id },
       choiceOrder: drawn.choiceOrder,
       questionRemainingSec: Math.max(0, Math.round((qStart + q.data.suggestedTimeSec * timeFactor(inv) * 1000 - now) / 1000)),
+      questionTotalSec: Math.round(q.data.suggestedTimeSec * timeFactor(inv)),
       totalRemainingSec: Math.max(0, Math.round((attempt.endsAt.getTime() - now) / 1000)),
       blockPaste: inv.test.blockPaste,
       requireFullscreen: inv.test.requireFullscreen,

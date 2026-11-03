@@ -38,6 +38,7 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/competen
         testId={id}
         aiAvailable={isAiConfigured()}
         hasQuestions={questionCount > 0}
+        jobTitle={test.jobTitle}
         skills={test.skills.map((s) => ({ id: s.id, name: s.name, weight: s.weight, questions: s.questions.length }))}
       />
     </>

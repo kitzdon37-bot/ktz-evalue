@@ -83,7 +83,7 @@ export function Notice({ tone = "info", children }: { tone?: "info" | "warning" 
     info: { box: "border-sky-200 bg-sky-50 text-sky-950", icon: Info, ic: "text-sky-600" },
     warning: { box: "border-sun-200 bg-sun-50 text-stone-900", icon: TriangleAlert, ic: "text-sun-600" },
     error: { box: "border-red-200 bg-red-50 text-red-900", icon: CircleAlert, ic: "text-red-600" },
-    success: { box: "border-brand-200 bg-brand-50 text-brand-950", icon: CircleCheck, ic: "text-brand-600" },
+    success: { box: "border-emerald-200 bg-emerald-50 text-emerald-950", icon: CircleCheck, ic: "text-emerald-600" },
   }[tone];
   const Icon = styles.icon;
   return (

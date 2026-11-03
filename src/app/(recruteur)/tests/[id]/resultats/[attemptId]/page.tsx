@@ -207,7 +207,7 @@ async function Content({ params }: PageProps<"/tests/[id]/resultats/[attemptId]"
                     const c = data.choices?.find((x) => x.id === cid);
                     if (!c) return null;
                     return (
-                      <li key={cid} className={`rounded px-2 py-1 ${given.has(cid) ? (correct.has(cid) ? "bg-brand-50 text-brand-900" : "bg-red-50 text-red-800") : correct.has(cid) ? "text-brand-800" : "text-stone-700"}`}>
+                      <li key={cid} className={`rounded px-2 py-1 ${given.has(cid) ? (correct.has(cid) ? "bg-emerald-50 text-emerald-900" : "bg-red-50 text-red-800") : correct.has(cid) ? "text-emerald-700" : "text-stone-700"}`}>
                         {given.has(cid) ? "● " : "○ "}
                         {c.text}
                         {correct.has(cid) && " ✓"}

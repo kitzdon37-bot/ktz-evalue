@@ -74,7 +74,10 @@ const CreateTestSchema = z.object({
   }),
   questionCount: z.coerce.number().int().min(10, { error: "10 questions minimum." }).max(30, { error: "30 questions maximum." }),
   questionTypes: z.array(z.enum(QUESTION_TYPES)).min(1, { error: "Cochez au moins un type de question." }),
-  mode: z.enum(["ai", "manual"]),
+  // ai : l'IA propose les compétences ; ai_full : compétences + questions ; manual : sans IA.
+  mode: z.enum(["ai", "ai_full", "manual"]),
+  // Compétences choisies parmi les suggestions (ou ajoutées à la main), 6 au plus.
+  suggestedSkills: z.array(z.string().trim().min(2).max(80)).max(6, { error: "6 compétences maximum." }),
 });
 
 export async function createTest(_state: FormState, formData: FormData): Promise<FormState> {
@@ -88,6 +91,7 @@ export async function createTest(_state: FormState, formData: FormData): Promise
     questionCount: formData.get("questionCount"),
     questionTypes: formData.getAll("questionTypes"),
     mode: formData.get("mode"),
+    suggestedSkills: [...new Set(formData.getAll("suggestedSkill").map((v) => String(v).trim()).filter(Boolean))],
   });
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
   const d = parsed.data;
@@ -108,8 +112,18 @@ export async function createTest(_state: FormState, formData: FormData): Promise
     include: { skills: { include: { questions: true } } },
   });
 
+  // Compétences choisies par le recruteur : gardées telles quelles (poids égaux),
+  // sauf s'il demande explicitement une proposition de l'IA.
+  const useChosen = d.suggestedSkills.length > 0 && d.mode !== "ai";
+  if (useChosen) {
+    const w = evenWeights(d.suggestedSkills.length);
+    await db.skill.createMany({
+      data: d.suggestedSkills.map((name, i) => ({ testId: test.id, name, weight: w[i], position: i })),
+    });
+  }
+
   let aiError = "";
-  if (d.mode === "ai") {
+  if (d.mode === "ai" || (d.mode === "ai_full" && !useChosen)) {
     try {
       const skills = await generateSkills(await contextFor(test, user.companyId));
       await db.skill.createMany({
@@ -119,6 +133,12 @@ export async function createTest(_state: FormState, formData: FormData): Promise
       aiError = "?ia=indisponible";
       console.error(e);
     }
+  }
+
+  // Test complet : on enchaîne directement sur la génération des questions.
+  if (d.mode === "ai_full" && !aiError) {
+    const result = await generateAllQuestions(test.id); // redirige vers les questions si tout va bien
+    if (result?.message) redirect(`/tests/${test.id}/competences?ia=indisponible`);
   }
   redirect(`/tests/${test.id}/competences${aiError}`);
 }
