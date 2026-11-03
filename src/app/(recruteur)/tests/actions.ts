@@ -29,6 +29,7 @@ import { copySkills, fromDb, getCompanyTest, toDb, type CompanyTest } from "@/li
 import type { FormState } from "@/lib/auth/schemas";
 
 function aiErrorMessage(e: unknown): string {
+  if (e instanceof AiBudgetError || e instanceof AiUnavailableError) console.warn(`[ia] génération bloquée : ${e.message}`);
   if (e instanceof AiBudgetError) return e.message;
   if (e instanceof AiUnavailableError) {
     return `${e.message} Utilisez un modèle de la bibliothèque, écrivez les questions vous-même, ou réessayez plus tard.`;

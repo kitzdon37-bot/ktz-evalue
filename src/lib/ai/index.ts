@@ -35,7 +35,10 @@ async function checkBudget(companyId: string) {
       "Votre plafond mensuel de génération par IA est atteint. Utilisez un modèle de la bibliothèque ou écrivez les questions vous-même.",
     );
   }
-  const globalCapUsd = Number(process.env.AI_GLOBAL_MONTHLY_CAP_USD ?? "50");
+  // Valeur absente, vide ou invalide → 50 $ par défaut (une ligne « AI_GLOBAL_MONTHLY_CAP_USD= »
+  // vide ne doit pas être lue comme un plafond de 0 $, qui bloquerait toute génération).
+  const parsedCap = Number.parseFloat(process.env.AI_GLOBAL_MONTHLY_CAP_USD ?? "");
+  const globalCapUsd = Number.isFinite(parsedCap) && parsedCap > 0 ? parsedCap : 50;
   if ((globalSpend._sum.estimatedCostMicro ?? 0) >= globalCapUsd * 1_000_000) {
     throw new AiBudgetError();
   }
