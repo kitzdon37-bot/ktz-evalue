@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useTransition } from "react";
+import { Mail, MessageCircle } from "lucide-react";
 import { ActionButton, FormMessage } from "@/components/form";
 import { btn, input, label } from "@/components/ui";
-import { inviteCandidates, updatePublicLink } from "./actions";
+import { inviteCandidates, markInvitationShared, updatePublicLink } from "./actions";
 
 export function InviteCandidatesForm({ testId }: { testId: string }) {
   const [state, action] = useActionState(inviteCandidates.bind(null, testId), undefined);
@@ -42,6 +43,53 @@ export function InviteCandidatesForm({ testId }: { testId: string }) {
         Inviter
       </ActionButton>
     </form>
+  );
+}
+
+/**
+ * Envoi par le recruteur lui-même, sans service payant : ouvre WhatsApp (application ou WhatsApp Web)
+ * ou la messagerie avec le message et le lien déjà écrits, puis note l'invitation comme envoyée.
+ */
+export function ShareButtons({
+  invitationId,
+  phone,
+  email,
+  subject,
+  text,
+}: {
+  invitationId: string;
+  phone: string | null;
+  email: string | null;
+  subject: string;
+  text: string;
+}) {
+  const [, startTransition] = useTransition();
+  const mark = (channel: "EMAIL" | "WHATSAPP") => startTransition(() => markInvitationShared(invitationId, channel));
+  const waNumber = phone?.replace(/[^\d]/g, "");
+  const base = "inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm transition";
+  return (
+    <>
+      {waNumber && (
+        <a
+          href={`https://wa.me/${waNumber}?text=${encodeURIComponent(text)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => mark("WHATSAPP")}
+          className={`${base} bg-emerald-600 hover:bg-emerald-700`}
+        >
+          <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+        </a>
+      )}
+      {email && (
+        <a
+          href={`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`}
+          onClick={() => mark("EMAIL")}
+          className={`${base} bg-sky-600 hover:bg-sky-700`}
+        >
+          <Mail className="h-3.5 w-3.5" /> Email
+        </a>
+      )}
+    </>
   );
 }
 

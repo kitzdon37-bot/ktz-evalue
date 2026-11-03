@@ -33,7 +33,11 @@ h1{font-size:25px;line-height:1.2;margin:0 0 8px;letter-spacing:-.02em}h2{font-s
 textarea,input[type=text]{width:100%;font:inherit;border:2px solid #ebe8e3;border-radius:16px;padding:14px;background:#fafaf9;-webkit-transition:border-color .15s,background .15s;transition:border-color .15s,background .15s}
 textarea:focus,input[type=text]:focus{outline:0;border-color:var(--b);background:#fff}textarea{min-height:190px;resize:vertical}
 .cnt{text-align:right;font-size:12px;color:#a8a29e;margin-top:4px}
-.q{user-select:none;-webkit-user-select:none;font-size:20px;font-weight:700;line-height:1.4;letter-spacing:-.01em;margin:4px 0 14px}
+.q{user-select:none;-webkit-user-select:none;font-size:20px;font-weight:700;line-height:1.4;letter-spacing:-.01em;margin:4px 0 14px;color:var(--b)}
+@-webkit-keyframes bl{50%{opacity:.2}}@keyframes bl{50%{opacity:.2}}
+.c.urgent{border-color:#dc2626;box-shadow:0 0 0 4px rgba(220,38,38,.18),0 10px 30px -14px rgba(28,25,23,.18)}
+.urgent .q,.ring.low b{-webkit-animation:bl 1s ease-in-out infinite;animation:bl 1s ease-in-out infinite}
+.urgent .q{color:#dc2626}
 .tag{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--b);margin:0 0 6px}
 .hd{display:flex;align-items:center;gap:12px;margin:2px 2px 14px}.hd .co{margin:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ring{position:relative;width:58px;height:58px;flex:none}.ring svg{display:block;transform:rotate(-90deg)}.ring circle{fill:none;stroke-width:6}.ring .bg{stroke:#ebe8e3}.ring .fg{stroke:var(--b);stroke-linecap:round;-webkit-transition:stroke-dashoffset 1s linear;transition:stroke-dashoffset 1s linear}
@@ -56,11 +60,17 @@ label.fl{display:block;font-size:14px;font-weight:700;color:#44403c;margin:14px 
 .c,.hd,.pr,.bar{-webkit-animation:up .45s ease-out both;animation:up .45s ease-out both}
 .sc{position:relative;width:150px;height:150px;margin:6px auto 4px}.sc svg{transform:rotate(-90deg)}.sc circle{fill:none;stroke-width:12}.sc .bg{stroke:#f0eeea}.sc .fg{stroke:var(--b);stroke-linecap:round}
 .sc div{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}.sc small{color:#a8a29e;font-size:14px;font-weight:700}
+.pv{position:sticky;top:0;z-index:9;display:flex;justify-content:space-between;align-items:center;gap:10px;background:#1c1917;color:#fff;font-size:14px;padding:10px 16px}.pv a{color:#fdba74;font-weight:700;text-decoration:none;white-space:nowrap}
 @media (prefers-reduced-motion:reduce){*{-webkit-animation:none!important;animation:none!important;transition:none!important}.ck2{stroke-dashoffset:0}}`;
 
-export function layout(opts: { title: string; color?: string | null; body: string; script?: string }) {
+export function layout(opts: { title: string; color?: string | null; body: string; script?: string; banner?: string }) {
   const color = /^#[0-9a-fA-F]{6}$/.test(opts.color ?? "") ? opts.color : "#ea580c";
-  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="theme-color" content="${color}"><title>${esc(opts.title)}</title><style>:root{--b:${color}}${CSS}</style></head><body><div class="w">${opts.body}</div>${opts.script ? `<script>${opts.script}</script>` : ""}</body></html>`;
+  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="theme-color" content="${color}"><title>${esc(opts.title)}</title><style>:root{--b:${color}}${CSS}</style></head><body>${opts.banner ?? ""}<div class="w">${opts.body}</div>${opts.script ? `<script>${opts.script}</script>` : ""}</body></html>`;
+}
+
+/** Bandeau de l'aperçu recruteur (rien n'est enregistré). */
+export function previewBanner(restartUrl: string) {
+  return `<div class="pv"><span>👁 <b>Aperçu</b> — exactement ce que verra le candidat. Rien n'est enregistré.</span><a href="${esc(restartUrl)}">↺ Recommencer</a></div>`;
 }
 
 // Coche dessinée (animation CSS seulement, aucun fichier image).
@@ -98,6 +108,8 @@ export function welcomePage(v: {
   webcam: boolean;
   fullscreen: boolean;
   error?: string;
+  /** Aperçu recruteur : le bouton passe à la 1re question sans rien enregistrer. */
+  preview?: { startUrl: string; banner: string };
 }) {
   const until = v.expiresAt.toLocaleDateString("fr-FR", { timeZone: "Africa/Bangui", day: "numeric", month: "long", year: "numeric" });
   const duration = Math.round(v.durationMinutes * (1 + v.extraTimePercent / 100));
@@ -113,17 +125,21 @@ export function welcomePage(v: {
 <li><i>🛡️</i><span><b>Restez sur la page.</b> Les sorties de la page, les copier-coller et les réponses très rapides sont signalés au recruteur.</span></li>
 ${v.fullscreen ? "<li><i>🖥️</i><span>Sur ordinateur, le test s'affiche <b>en plein écran</b>.</span></li>" : ""}
 <li><i>1️⃣</i><span>Le test ne se passe <b>qu'une seule fois</b>. Installez-vous au calme.</span></li></ul></div>
-<form class="c" method="post" action="/t/${esc(v.token)}" id="f">
-<input type="hidden" name="action" value="start">
+${
+    v.preview
+      ? `<form class="c" method="get" action="${esc(v.preview.startUrl.split("?")[0])}" id="f"><input type="hidden" name="q" value="1">`
+      : `<form class="c" method="post" action="/t/${esc(v.token)}" id="f">
+<input type="hidden" name="action" value="start">`
+  }
 ${v.error ? `<p class="al er">${esc(v.error)}</p>` : ""}
 <label class="ck"><input type="checkbox" name="consent" value="1" required><span>J'accepte que mes réponses et les signaux enregistrés pendant le test soient transmis à ${esc(v.companyName)} pour ce recrutement. Ils sont supprimés au plus tard 12 mois après le test.</span></label>
 ${v.webcam ? `<label class="ck"><input type="checkbox" name="webcam" value="1" required><span>J'accepte que des photos soient prises par la caméra pendant le test (une toutes les 30 à 60 secondes). Elles sont supprimées 90 jours après le test.</span></label>` : ""}
 <button class="btn" type="submit">Commencer le test →</button></form>
 <p class="ft">Test proposé avec <b>KTZ Évalue</b></p>`;
-  const script = v.fullscreen
+  const script = v.fullscreen && !v.preview
     ? `(function(){var f=document.getElementById('f');if(!f)return;f.addEventListener('submit',function(){try{if(!/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)){var d=document.documentElement;(d.requestFullscreen||d.webkitRequestFullscreen||function(){}).call(d)}}catch(e){}})})();`
     : undefined;
-  return layout({ title: v.testTitle, color: v.color, body, script });
+  return layout({ title: v.testTitle, color: v.color, body, script, banner: v.preview?.banner });
 }
 
 // ───── Question ─────
@@ -143,6 +159,8 @@ export function questionPage(v: {
   totalRemainingSec: number;
   blockPaste: boolean;
   requireFullscreen: boolean;
+  /** Aperçu recruteur : « Valider » passe à la question suivante, rien n'est enregistré. */
+  preview?: { nextUrl: string; banner: string };
 }) {
   const q = v.question;
   const choices = new Map((q.choices ?? []).map((c) => [c.id, c.text]));
@@ -179,8 +197,12 @@ export function questionPage(v: {
 <div class="ring${low ? " low" : ""}" id="rg" role="timer" aria-label="Temps restant pour cette question"><svg width="58" height="58" viewBox="0 0 58 58"><circle class="bg" cx="29" cy="29" r="25"/><circle class="fg" id="rf" cx="29" cy="29" r="25" stroke-dasharray="${C}" stroke-dashoffset="${offset}"/></svg><b id="qt">${formatDuration(v.questionRemainingSec)}</b></div></div>
 <div class="pr"><span>Question <b>${v.index}</b> sur ${v.total}</span><span>Test : <span class="t" id="tt">${formatDuration(v.totalRemainingSec)}</span></span></div>
 <div class="bar" role="progressbar" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"><div style="width:${percent}%"></div></div>
-<form class="c" method="post" action="/t/${esc(v.token)}" id="f">
-<input type="hidden" name="action" value="answer"><input type="hidden" name="questionId" value="${esc(q.id)}">
+${
+    v.preview
+      ? `<form class="c${low ? " urgent" : ""}" method="get" action="${esc(v.preview.nextUrl.split("?")[0])}" id="f"><input type="hidden" name="q" value="${v.index + 1}">`
+      : `<form class="c${low ? " urgent" : ""}" method="post" action="/t/${esc(v.token)}" id="f">
+<input type="hidden" name="action" value="answer"><input type="hidden" name="questionId" value="${esc(q.id)}">`
+  }
 <p class="tag">${esc(kind)}</p>
 <p class="q">${esc(q.prompt).replace(/\n/g, "<br>")}</p>${field}
 <div id="msg"></div><button class="btn" type="submit" id="b">Valider ma réponse</button><span class="kb" id="kb" style="display:none"></span></form>
@@ -195,8 +217,9 @@ export function questionPage(v: {
     bp: v.blockPaste,
     fs: v.requireFullscreen,
     ty: q.type,
+    pv: v.preview ? v.preview.nextUrl : 0,
   });
-  return layout({ title: `Question ${v.index} / ${v.total}`, color: v.color, body, script: `var K=${cfg};${CLIENT_JS}` });
+  return layout({ title: `Question ${v.index} / ${v.total}`, color: v.color, body, script: `var K=${cfg};${CLIENT_JS}`, banner: v.preview?.banner });
 }
 
 // Script du candidat, écrit en JavaScript ancien (ES5) pour les vieux navigateurs.
@@ -204,20 +227,20 @@ const CLIENT_JS = `(function(){
 var f=document.getElementById('f'),b=document.getElementById('b'),msg=document.getElementById('msg');
 var sending=false,start=new Date().getTime(),pk='ktz_p_'+K.t,hiddenAt=null;
 function fmt(s){s=Math.max(0,Math.floor(s));var m=Math.floor(s/60),r=s%60;return m+':'+(r<10?'0':'')+r}
-function ev(type,extra){try{var d={type:type,questionId:K.q,durationMs:extra||null};var x=new XMLHttpRequest();x.open('POST','/t/'+K.t+'/evenement',true);x.setRequestHeader('Content-Type','application/json');x.send(JSON.stringify(d))}catch(e){}}
+function ev(type,extra){if(K.pv)return;try{var d={type:type,questionId:K.q,durationMs:extra||null};var x=new XMLHttpRequest();x.open('POST','/t/'+K.t+'/evenement',true);x.setRequestHeader('Content-Type','application/json');x.send(JSON.stringify(d))}catch(e){}}
 function fields(){var o=[],e=f.elements;for(var i=0;i<e.length;i++){var el=e[i];if(!el.name)continue;if((el.type=='radio'||el.type=='checkbox')&&!el.checked)continue;o.push([el.name,el.value])}return o}
 function body(o){var s=[];for(var i=0;i<o.length;i++){s.push(encodeURIComponent(o[i][0])+'='+encodeURIComponent(o[i][1]))}return s.join('&')}
 function show(cls,t){msg.innerHTML='<p class="al '+cls+'">'+t+'</p>'}
-function send(o,retry){sending=true;b.disabled=true;b.innerHTML='Envoi…';var x=new XMLHttpRequest();x.open('POST','/t/'+K.t,true);
+function send(o,retry){sending=true;b.disabled=true;if(K.pv){b.innerHTML='Question suivante…';location.href=K.pv;return}b.innerHTML='Envoi…';var x=new XMLHttpRequest();x.open('POST','/t/'+K.t,true);
 x.setRequestHeader('Content-Type','application/x-www-form-urlencoded');x.setRequestHeader('X-KTZ','1');x.timeout=20000;
 x.onload=function(){if(x.status>=200&&x.status<300){try{localStorage.removeItem(pk)}catch(e){}var r={};try{r=JSON.parse(x.responseText)}catch(e){}location.replace(r.next||('/t/'+K.t))}else fail(o)};
 x.onerror=x.ontimeout=function(){fail(o)};x.send(body(o))}
 function fail(o){try{localStorage.setItem(pk,JSON.stringify(o))}catch(e){}show('wa','Pas de réseau : votre réponse est gardée sur le téléphone et sera envoyée dès le retour de la connexion. Ne fermez pas cette page.');setTimeout(function(){send(o,true)},5000)}
-try{var p=localStorage.getItem(pk);if(p){var po=JSON.parse(p);var same=false;for(var i=0;i<po.length;i++){if(po[i][0]=='questionId'&&po[i][1]==K.q)same=true}if(same){send(po,true);return}else localStorage.removeItem(pk)}}catch(e){}
+try{var p=K.pv?null:localStorage.getItem(pk);if(p){var po=JSON.parse(p);var same=false;for(var i=0;i<po.length;i++){if(po[i][0]=='questionId'&&po[i][1]==K.q)same=true}if(same){send(po,true);return}else localStorage.removeItem(pk)}}catch(e){}
 f.onsubmit=function(e){if(e&&e.preventDefault)e.preventDefault();if(sending)return false;send(fields());return false};
 var rg=document.getElementById('rg'),rf=document.getElementById('rf'),C=157.08,lowAt=Math.max(10,K.qt*0.2);
 function tick(){var el=(new Date().getTime()-start)/1000,qr=K.qs-el,tr=K.ts-el;document.getElementById('qt').innerHTML=fmt(qr);document.getElementById('tt').innerHTML=fmt(tr);
-if(rf){rf.setAttribute('stroke-dashoffset',(C*(1-Math.max(0,qr)/K.qt)).toFixed(2))}if(rg&&qr<=lowAt&&rg.className.indexOf('low')<0)rg.className+=' low';
+if(rf){rf.setAttribute('stroke-dashoffset',(C*(1-Math.max(0,qr)/K.qt)).toFixed(2))}if(qr<=lowAt){if(rg&&rg.className.indexOf('low')<0)rg.className+=' low';if(f.className.indexOf('urgent')<0)f.className+=' urgent'}
 if((qr<=0||tr<=0)&&!sending){show('wa','Temps écoulé : votre réponse est envoyée.');send(fields())}}
 setInterval(tick,1000);
 var opts=f.querySelectorAll('.opt'),ins=f.querySelectorAll('.opt input'),ans=f.querySelector('.ans'),cnt=document.getElementById('cnt');
@@ -234,7 +257,7 @@ var a=document.querySelectorAll('.ans');for(var i=0;i<a.length;i++){a[i].onpaste
 if(K.bp){a[i].ondrop=function(e){if(e&&e.preventDefault)e.preventDefault();return false}}}
 document.addEventListener('visibilitychange',function(){if(document.hidden){hiddenAt=new Date().getTime()}else if(hiddenAt){ev('TAB_HIDDEN',new Date().getTime()-hiddenAt);hiddenAt=null}});
 if(K.fs){document.addEventListener('fullscreenchange',function(){if(!document.fullscreenElement)ev('FULLSCREEN_EXIT')})}
-window.onbeforeunload=function(){if(!sending)return 'Votre réponse ne sera pas enregistrée.'};
+window.onbeforeunload=function(){if(!sending&&!K.pv)return 'Votre réponse ne sera pas enregistrée.'};
 })();`;
 
 // ───── Fin du test ─────
@@ -247,6 +270,7 @@ export function donePage(v: {
   score: number | null;
   showScore: boolean;
   pending: boolean;
+  banner?: string;
 }) {
   let scoreBlock = "";
   if (v.showScore) {
@@ -262,7 +286,7 @@ export function donePage(v: {
 ${v.timedOut ? `<p class="al wa">Le temps du test est écoulé. Les réponses validées avant la fin ont bien été enregistrées.</p>` : `<p class="al ok">✓ Toutes vos réponses ont bien été enregistrées.</p>`}
 <p class="m">${esc(v.companyName)} a été prévenu et reviendra vers vous pour la suite du recrutement « ${esc(v.testTitle)} ». Bonne chance !</p></div>${scoreBlock}
 <p class="ft">Vous pouvez fermer cette page · <b>KTZ Évalue</b></p>`;
-  return layout({ title: "Test terminé", color: v.color, body });
+  return layout({ title: "Test terminé", color: v.color, body, banner: v.banner });
 }
 
 // ───── Lien public : inscription du candidat ─────

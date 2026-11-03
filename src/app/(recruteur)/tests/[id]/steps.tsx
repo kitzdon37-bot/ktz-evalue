@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Eye } from "lucide-react";
+import { ExternalLink, Eye } from "lucide-react";
 
 const STEPS = [
   { key: "competences", label: "Compétences", n: 1 },
@@ -17,25 +17,34 @@ export function TestSteps({ testId, current }: { testId: string; current: (typeo
         {STEPS.map((s, i) => {
           const active = s.key === current;
           const done = s.n > 0 && i < currentIndex;
-          return (
-            <li key={s.key} className="flex-1">
-              <Link
-                href={`/tests/${testId}/${s.key}`}
-                prefetch={false}
-                aria-current={active ? "step" : undefined}
-                className={`flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                  active ? "bg-brand-700 text-white shadow-sm" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+          const cls = `flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-semibold transition ${
+            active ? "bg-brand-700 text-white shadow-sm" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+          }`;
+          const content = (
+            <>
+              <span
+                className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${
+                  active ? "bg-white/20 text-white" : done ? "bg-brand-100 text-brand-800" : "bg-stone-100 text-stone-600"
                 }`}
               >
-                <span
-                  className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${
-                    active ? "bg-white/20 text-white" : done ? "bg-brand-100 text-brand-800" : "bg-stone-100 text-stone-600"
-                  }`}
-                >
-                  {s.n > 0 ? (done ? "✓" : s.n) : <Eye className="h-3.5 w-3.5" />}
-                </span>
-                {s.label}
-              </Link>
+                {s.n > 0 ? (done ? "✓" : s.n) : <Eye className="h-3.5 w-3.5" />}
+              </span>
+              {s.label}
+              {s.key === "apercu" && <ExternalLink className="h-3.5 w-3.5 opacity-70" />}
+            </>
+          );
+          return (
+            <li key={s.key} className="flex-1">
+              {s.key === "apercu" ? (
+                // L'aperçu réel s'ouvre dans un onglet à part, comme le verra le candidat.
+                <a href={`/tests/${testId}/apercu/candidat`} target="_blank" rel="noopener" className={cls} title="Ouvre le test tel que le candidat le verra, dans un nouvel onglet">
+                  {content}
+                </a>
+              ) : (
+                <Link href={`/tests/${testId}/${s.key}`} prefetch={false} aria-current={active ? "step" : undefined} className={cls}>
+                  {content}
+                </Link>
+              )}
             </li>
           );
         })}

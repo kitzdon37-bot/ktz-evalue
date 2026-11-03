@@ -3,7 +3,8 @@ import { Suspense } from "react";
 import { requireCompany } from "@/lib/tenant";
 import { fromDb, getCompanyTest } from "@/lib/tests/repository";
 import { isMcq, QUESTION_TYPE_LABELS } from "@/lib/tests/model";
-import { BackLink, Notice, PageTitle , Loading } from "@/components/ui";
+import { Eye } from "lucide-react";
+import { BackLink, btn, Notice, PageTitle, Loading } from "@/components/ui";
 import { TestSteps } from "../steps";
 
 export const metadata: Metadata = { title: "Aperçu du test" };
@@ -20,10 +21,18 @@ async function Content({ params }: PageProps<"/tests/[id]/apercu">) {
       <BackLink href={`/tests/${id}`}>{test.title}</BackLink>
       <PageTitle title="Aperçu candidat" subtitle="Les questions telles qu'elles s'afficheront sur le téléphone du candidat." />
       {test.status === "DRAFT" && <TestSteps testId={id} current="apercu" />}
-      <div className="mb-4">
+      <div className="mb-4 space-y-3">
+        <a
+          href={`/tests/${id}/apercu/candidat`}
+          target="_blank"
+          rel="noopener"
+          className={`${btn.primary} w-full justify-center px-5 py-3.5 text-base sm:w-auto`}
+        >
+          <Eye className="h-5 w-5" /> Ouvrir l&apos;aperçu réel dans un nouvel onglet
+        </a>
         <Notice>
-          Le candidat voit une question à la fois, avec un chronomètre. Ici, toutes les questions posées sont affichées à
-          la suite (hors réserve). Les bonnes réponses ne sont jamais envoyées au candidat.
+          L&apos;aperçu réel montre le test exactement comme le candidat : accueil, une question à la fois, chronomètre et page
+          de fin, sans rien enregistrer. Ci-dessous, toutes les questions posées sont affichées à la suite (hors réserve).
         </Notice>
       </div>
       <div className="mx-auto max-w-sm space-y-4">

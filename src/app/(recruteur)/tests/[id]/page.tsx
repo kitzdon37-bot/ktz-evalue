@@ -153,8 +153,11 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]">) {
                 </Link>
               </>
             )}
-            <Link href={`/tests/${id}/apercu`} className={`${btn.secondary} w-full`}>
-              <Eye className="h-4 w-4" /> Aperçu candidat
+            <a href={`/tests/${id}/apercu/candidat`} target="_blank" rel="noopener" className={`${btn.secondary} w-full`}>
+              <Eye className="h-4 w-4" /> Aperçu candidat (nouvel onglet)
+            </a>
+            <Link href={`/tests/${id}/apercu`} className="text-center text-xs font-medium text-stone-500 hover:text-brand-700">
+              Voir toutes les questions sur une page
             </Link>
             {editable && (
               <form action={duplicateTest.bind(null, id)}>

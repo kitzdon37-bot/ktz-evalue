@@ -8,7 +8,8 @@ import { getCompanyTest } from "@/lib/tests/repository";
 import { ActionButton } from "@/components/form";
 import { BackLink, btn, Card, Notice, PageTitle , Loading } from "@/components/ui";
 import { cancelInvitationAction, remindInvitation, setExtraTime } from "./actions";
-import { CopyButton, InviteCandidatesForm, PublicLinkForm } from "./forms";
+import { CopyButton, InviteCandidatesForm, PublicLinkForm, ShareButtons } from "./forms";
+import { buildInvitationMessage, isChannelConfigured } from "@/lib/messages";
 
 export const metadata: Metadata = { title: "Inviter des candidats" };
 // Envoi de nombreuses invitations à la fois.
@@ -54,6 +55,24 @@ async function Content({ params }: PageProps<"/tests/[id]/inviter">) {
           <Notice tone="warning">
             {test.status === "DRAFT" ? "Publiez le test pour pouvoir inviter des candidats." : "Ce test est fermé : il n'accepte plus de nouveaux candidats."}
           </Notice>
+        </div>
+      )}
+
+      {editable && (!isChannelConfigured("EMAIL") || !isChannelConfigured("WHATSAPP") || appUrl("/").includes("localhost")) && (
+        <div className="mb-4 space-y-3">
+          {(!isChannelConfigured("EMAIL") || !isChannelConfigured("WHATSAPP")) && (
+            <Notice tone="info">
+              <strong>Envoi automatique {!isChannelConfigured("EMAIL") && !isChannelConfigured("WHATSAPP") ? "non configuré" : `non configuré pour ${!isChannelConfigured("EMAIL") ? "l'email" : "WhatsApp"}`}.</strong>{" "}
+              Après avoir ajouté un candidat, cliquez sur <strong>« WhatsApp »</strong> ou <strong>« Email »</strong> à côté de son nom : votre
+              WhatsApp ou votre messagerie s&apos;ouvre avec le message et le lien déjà écrits, il ne reste qu&apos;à appuyer sur Envoyer.
+            </Notice>
+          )}
+          {appUrl("/").includes("localhost") && (
+            <Notice tone="warning">
+              Le site tourne pour l&apos;instant <strong>sur cet ordinateur</strong> : les liens de test (localhost) ne s&apos;ouvrent que
+              sur ce PC. Pour de vrais candidats, le site doit d&apos;abord être mis en ligne.
+            </Notice>
+          )}
         </div>
       )}
 
@@ -115,12 +134,22 @@ async function Content({ params }: PageProps<"/tests/[id]/inviter">) {
                   </div>
                   {editable && (
                     <div className="flex flex-wrap gap-2">
+                      {inv.status !== "CANCELLED" && inv.status !== "COMPLETED" && (() => {
+                        const m = buildInvitationMessage(
+                          { ...inv, test: { title: test.title, durationMinutes: test.durationMinutes }, company: { name: user.companyName } },
+                          inv.status === "PENDING" ? "invitation" : "relance",
+                        );
+                        return <ShareButtons invitationId={inv.id} phone={inv.candidate.phone} email={inv.candidate.email} subject={m.subject} text={m.text} />;
+                      })()}
                       {inv.status !== "CANCELLED" && <CopyButton text={appUrl(`/t/${inv.token}`)} />}
                       {waiting && (
                         <>
-                          <form action={remindInvitation.bind(null, inv.id)}>
-                            <ActionButton className={btn.small}>{inv.status === "PENDING" ? "Envoyer" : "Relancer"}</ActionButton>
-                          </form>
+                          {/* Envoi automatique seulement si un service (Resend, WasenderAPI) est configuré. */}
+                          {(isChannelConfigured("EMAIL") || isChannelConfigured("WHATSAPP")) && (
+                            <form action={remindInvitation.bind(null, inv.id)}>
+                              <ActionButton className={btn.small}>{inv.status === "PENDING" ? "Envoyer" : "Relancer"}</ActionButton>
+                            </form>
+                          )}
                           <form action={setExtraTime.bind(null, inv.id)}>
                             <input type="hidden" name="extra" value={inv.extraTimePercent ? "0" : "50"} />
                             <ActionButton className={btn.small}>{inv.extraTimePercent ? "Temps normal" : "Temps +50 %"}</ActionButton>

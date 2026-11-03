@@ -7,7 +7,7 @@ import { requireEditor } from "@/lib/tenant";
 import { getCompanyTest } from "@/lib/tests/repository";
 import { createInvitation, newInvitationToken } from "@/lib/invitations";
 import { parseCandidates, splitRows } from "@/lib/candidates/parse";
-import { sendCandidateMessage } from "@/lib/messages";
+import { recordManualShare, sendCandidateMessage } from "@/lib/messages";
 import type { FormState } from "@/lib/auth/schemas";
 
 const MAX_PER_BATCH = 200;
@@ -57,6 +57,7 @@ export async function inviteCandidates(testId: string, _state: FormState, formDa
   let created = 0;
   let already = 0;
   let sent = 0;
+  let manual = 0;
   const sendErrors = new Set<string>();
   for (const c of valid) {
     const { invitation, created: isNew } = await createInvitation({
@@ -73,19 +74,32 @@ export async function inviteCandidates(testId: string, _state: FormState, formDa
     if (channels.length) {
       const r = await sendCandidateMessage(invitation.id, "invitation", channels);
       if (r.sent > 0) sent++;
+      if (r.manual > 0 && r.sent === 0) manual++;
       r.errors.forEach((e) => sendErrors.add(e));
     }
   }
 
   refresh();
   const parts = [`${created} candidat(s) invité(s)`];
-  if (channels.length) parts.push(`${sent} message(s) envoyé(s)`);
+  if (sent) parts.push(`${sent} message(s) envoyé(s) automatiquement`);
   if (already) parts.push(`${already} déjà invité(s)`);
+  if (manual) {
+    parts.push(
+      `${manual} à envoyer vous-même : cliquez sur « WhatsApp » ou « Email » à côté du candidat, le message et le lien sont déjà écrits`,
+    );
+  }
   const problems = [...errors, ...sendErrors].slice(0, 8);
   return {
-    success: `${parts.join(", ")}.`,
+    success: `${parts.join(" · ")}.`,
     message: problems.length ? `À vérifier :\n${problems.join("\n")}` : undefined,
   };
+}
+
+// Le recruteur a envoyé l'invitation lui-même depuis son WhatsApp ou sa messagerie.
+export async function markInvitationShared(invitationId: string, channel: "EMAIL" | "WHATSAPP") {
+  const user = await requireEditor();
+  await recordManualShare(invitationId, user.companyId, channel);
+  refresh();
 }
 
 async function companyInvitation(invitationId: string) {
