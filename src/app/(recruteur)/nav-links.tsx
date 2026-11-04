@@ -31,11 +31,13 @@ function NavList({ pathname }: { pathname: string }) {
             href={href}
             prefetch={false}
             aria-current={active ? "page" : undefined}
-            className={`inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2 text-sm font-semibold transition ${
-              active ? "bg-brand-700 text-white shadow-sm shadow-brand-900/20" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+            className={`group inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2 text-sm font-semibold transition duration-300 ${
+              active
+                ? "bg-gradient-to-br from-brand-600 to-brand-800 text-white shadow-md shadow-brand-900/25"
+                : "text-stone-600 hover:bg-brand-50 hover:text-brand-800"
             }`}
           >
-            <Icon className="h-4 w-4" />
+            <Icon className="h-4 w-4 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110" />
             {label}
           </Link>
         );

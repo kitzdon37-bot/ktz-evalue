@@ -15,7 +15,7 @@ import {
   type LoadedAttempt,
   type LoadedInvitation,
 } from "@/lib/candidate/attempt";
-import { donePage, messagePage, questionPage, welcomePage } from "@/lib/candidate/views";
+import { donePage, messagePage, questionPage, testPhoto, welcomePage } from "@/lib/candidate/views";
 
 // La fin du test déclenche la correction par l'IA en arrière-plan.
 export const maxDuration = 300;
@@ -83,6 +83,7 @@ function render(inv: LoadedInvitation, attempt: LoadedAttempt | null, error?: st
     return html(
       welcomePage({
         token: inv.token,
+        photo: testPhoto(inv.test.jobTitle, inv.test.id),
         companyName: inv.company.name,
         color,
         logoUrl: inv.company.logoUrl,

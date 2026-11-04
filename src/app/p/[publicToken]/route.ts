@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { createInvitation } from "@/lib/invitations";
 import { normalizePhone } from "@/lib/phone";
 import { sendCandidateMessage } from "@/lib/messages";
-import { messagePage, publicSignupPage } from "@/lib/candidate/views";
+import { messagePage, publicSignupPage, testPhoto } from "@/lib/candidate/views";
 
 const HTML_HEADERS = { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Robots-Tag": "noindex" };
 const html = (body: string, status = 200) => new NextResponse(body, { status, headers: HTML_HEADERS });
@@ -18,6 +18,7 @@ async function loadTest(publicToken: string) {
     select: {
       id: true,
       title: true,
+      jobTitle: true,
       status: true,
       deadline: true,
       durationMinutes: true,
@@ -49,6 +50,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext<"/p/[publicToken]
   return html(
     publicSignupPage({
       publicToken,
+      photo: testPhoto(test.jobTitle, test.id),
       color: test.company.primaryColor,
       companyName: test.company.name,
       testTitle: test.title,
@@ -79,6 +81,7 @@ export async function POST(req: NextRequest, ctx: RouteContext<"/p/[publicToken]
     html(
       publicSignupPage({
         publicToken,
+        photo: testPhoto(test.jobTitle, test.id),
         color: test.company.primaryColor,
         companyName: test.company.name,
         testTitle: test.title,

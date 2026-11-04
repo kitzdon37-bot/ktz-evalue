@@ -61,7 +61,7 @@ export default function RecruiterLayout({ children }: { children: React.ReactNod
           </Suspense>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
+      <main className="stagger mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
       <footer className="border-t border-stone-200/70 py-6 text-center text-xs text-stone-500">
         KTZ Évalue · Tests de recrutement pour l&apos;Afrique francophone
       </footer>

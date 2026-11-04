@@ -17,7 +17,7 @@ export function ScoreBar({ score, label }: { score: number | null; label?: strin
         </div>
       )}
       <div className="h-2 overflow-hidden rounded-full bg-stone-100" role="img" aria-label={`${label ?? "Score"} : ${score === null ? "non disponible" : Math.round(v)} sur 100`}>
-        {score !== null && <div className={`h-2 rounded-full bg-gradient-to-r ${tone(v)}`} style={{ width: `${Math.max(v, 2)}%` }} />}
+        {score !== null && <div className={`grow-x h-2 rounded-full bg-gradient-to-r ${tone(v)}`} style={{ width: `${Math.max(v, 2)}%` }} />}
       </div>
     </div>
   );

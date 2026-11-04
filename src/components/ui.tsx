@@ -6,8 +6,8 @@ const base =
   "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-60";
 
 export const btn = {
-  primary: `${base} bg-brand-700 px-4 py-2.5 text-sm text-white shadow-sm shadow-brand-900/20 hover:bg-brand-800 hover:shadow-md active:scale-[0.98]`,
-  accent: `${base} bg-sun-400 px-4 py-2.5 text-sm text-stone-900 shadow-sm hover:bg-sun-300 active:scale-[0.98]`,
+  primary: `${base} btn-shine bg-brand-700 px-4 py-2.5 text-sm text-white shadow-sm shadow-brand-900/20 hover:bg-brand-800 hover:shadow-md active:scale-[0.98]`,
+  accent: `${base} btn-shine bg-sun-400 px-4 py-2.5 text-sm text-stone-900 shadow-sm hover:bg-sun-300 active:scale-[0.98]`,
   secondary: `${base} border border-stone-200 bg-white px-4 py-2.5 text-sm text-stone-800 shadow-sm hover:border-stone-300 hover:bg-stone-50`,
   ghost: `${base} px-3 py-2 text-sm text-stone-700 hover:bg-stone-100`,
   danger: `${base} border border-red-200 bg-white px-4 py-2.5 text-sm text-red-700 hover:bg-red-50`,
@@ -43,7 +43,7 @@ export function PageTitle({
 }
 
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <div className={`rounded-2xl border border-stone-200/80 bg-white p-5 shadow-soft sm:p-6 ${className}`}>{children}</div>;
+  return <div className={`rounded-2xl border border-stone-200/80 bg-white p-5 shadow-soft transition-shadow duration-300 hover:shadow-lift sm:p-6 ${className}`}>{children}</div>;
 }
 
 export function CardTitle({ icon: Icon, children, aside }: { icon?: LucideIcon; children: React.ReactNode; aside?: React.ReactNode }) {
@@ -72,7 +72,11 @@ const STATUS_STYLES: Record<string, string> = {
 export function StatusBadge({ status, label }: { status: string; label: string }) {
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${STATUS_STYLES[status] ?? ""}`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${status === "PUBLISHED" ? "bg-brand-500" : status === "CLOSED" ? "bg-sun-500" : "bg-stone-400"}`} />
+      {status === "PUBLISHED" ? (
+        <span className="live-dot !h-1.5 !w-1.5 !bg-brand-500" aria-hidden="true" />
+      ) : (
+        <span className={`h-1.5 w-1.5 rounded-full ${status === "CLOSED" ? "bg-sun-500" : "bg-stone-400"}`} />
+      )}
       {label}
     </span>
   );
@@ -116,7 +120,7 @@ export function EmptyState({
 }) {
   return (
     <div className="rounded-2xl border border-dashed border-stone-300 bg-white/60 px-6 py-12 text-center">
-      <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-brand-50 to-sun-50 text-brand-700 ring-1 ring-brand-100">
+      <div className="float-y mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-brand-50 to-sun-50 text-brand-700 shadow-lg shadow-brand-500/10 ring-1 ring-brand-100">
         <Icon className="h-7 w-7" />
       </div>
       <p className="text-lg font-bold text-stone-900">{title}</p>
@@ -129,11 +133,11 @@ export function EmptyState({
 export function Loading() {
   return (
     <div className="space-y-4" aria-busy="true" aria-label="Chargement">
-      <div className="h-8 w-64 animate-pulse rounded-lg bg-stone-200/70" />
-      <div className="h-4 w-96 max-w-full animate-pulse rounded bg-stone-200/60" />
+      <div className="shimmer h-8 w-64 rounded-lg" />
+      <div className="shimmer h-4 w-96 max-w-full rounded" />
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="h-32 animate-pulse rounded-2xl bg-stone-200/50" />
-        <div className="h-32 animate-pulse rounded-2xl bg-stone-200/50" />
+        <div className="shimmer h-32 rounded-2xl" />
+        <div className="shimmer h-32 rounded-2xl" />
       </div>
     </div>
   );
