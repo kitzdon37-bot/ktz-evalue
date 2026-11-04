@@ -3,13 +3,17 @@ import type * as z from "zod";
 import { db } from "@/lib/db";
 import type { AiOperation } from "@/generated/prisma/client";
 import { anthropicProvider } from "./anthropic";
+import { groqProvider, mistralProvider } from "./openai-compatible";
 import { AiBudgetError, AiUnavailableError, type AiProvider, type StructuredRequest } from "./provider";
 
 export { AiBudgetError, AiUnavailableError } from "./provider";
 
-// Ordre d'essai : Claude d'abord, puis le fournisseur de secours (à ajouter ici
-// quand il sera choisi ; il doit respecter la même interface AiProvider).
-const PROVIDERS: AiProvider[] = [anthropicProvider];
+// Ordre d'essai : Claude d'abord (payant, le meilleur), puis les formules gratuites de
+// Mistral et de Groq, qui ne servent qu'à rédiger des questions (jamais aux réponses des candidats).
+const PROVIDERS: AiProvider[] = [anthropicProvider, mistralProvider, groqProvider];
+
+// Opérations qui envoient des données de candidats : réservées aux fournisseurs qui les protègent.
+const PERSONAL_DATA_OPERATIONS: readonly AiOperation[] = ["GRADING", "TRANSCRIPTION"];
 
 export function isAiConfigured() {
   return PROVIDERS.some((p) => p.isConfigured());
@@ -50,11 +54,23 @@ export async function runAi<T extends z.ZodType>(
   opts: { companyId: string; operation: AiOperation },
   req: StructuredRequest<T>,
 ): Promise<z.infer<T>> {
-  const providers = PROVIDERS.filter((p) => p.isConfigured());
+  const personal = PERSONAL_DATA_OPERATIONS.includes(opts.operation);
+  let providers = PROVIDERS.filter((p) => p.isConfigured() && (!personal || p.personalData));
   if (providers.length === 0) {
-    throw new AiUnavailableError("L'IA n'est pas encore configurée (clé ANTHROPIC_API_KEY manquante).");
+    throw new AiUnavailableError(
+      personal
+        ? "La correction par IA demande Claude (clé ANTHROPIC_API_KEY avec du crédit)."
+        : "L'IA n'est pas encore configurée (aucune clé Anthropic, Mistral ou Groq).",
+    );
   }
-  await checkBudget(opts.companyId);
+  // Plafond de dépense : il ne concerne que les fournisseurs payants.
+  try {
+    await checkBudget(opts.companyId);
+  } catch (e) {
+    if (!(e instanceof AiBudgetError)) throw e;
+    providers = providers.filter((p) => p.free);
+    if (providers.length === 0) throw e;
+  }
 
   for (const provider of providers) {
     const started = Date.now();

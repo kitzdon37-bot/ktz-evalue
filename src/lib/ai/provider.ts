@@ -19,6 +19,10 @@ export type StructuredResult<T> = {
 
 export interface AiProvider {
   name: string;
+  /** Formule gratuite : pas soumise au plafond de dépense. */
+  free?: boolean;
+  /** Peut recevoir des données personnelles (réponses des candidats). Faux pour les formules gratuites. */
+  personalData?: boolean;
   isConfigured(): boolean;
   generate<T extends z.ZodType>(req: StructuredRequest<T>): Promise<StructuredResult<z.infer<T>>>;
 }

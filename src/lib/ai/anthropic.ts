@@ -18,6 +18,8 @@ function getClient() {
 
 export const anthropicProvider: AiProvider = {
   name: "anthropic",
+  free: false,
+  personalData: true,
   isConfigured: () => Boolean(process.env.ANTHROPIC_API_KEY),
 
   async generate<T extends z.ZodType>(req: StructuredRequest<T>): Promise<StructuredResult<z.infer<T>>> {
