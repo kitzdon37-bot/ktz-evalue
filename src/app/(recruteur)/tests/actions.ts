@@ -251,16 +251,27 @@ async function generateAllQuestions(testId: string): Promise<FormState> {
   const ctx = await contextFor(test, user.companyId);
   const plan = questionPlan(test.skills.map((s) => s.weight), test.questionCount);
 
+  // Une compétence après l'autre (et non toutes en même temps) : les formules gratuites
+  // limitent le volume par minute. Une compétence qui échoue n'annule pas les autres.
   let missing = 0;
+  let firstError: unknown = null;
+  const results: { questions: Awaited<ReturnType<typeof generateQuestionsForSkill>>["questions"]; missing: number }[] = [];
+  for (const [i, skill] of test.skills.entries()) {
+    const toCreate = Math.max(0, plan[i].total - skill.questions.length);
+    if (toCreate === 0) {
+      results.push({ questions: [], missing: 0 });
+      continue;
+    }
+    try {
+      results.push(await generateQuestionsForSkill(ctx, skill.name, toCreate, skill.questions.map((q) => q.prompt)));
+    } catch (e) {
+      firstError ??= e;
+      results.push({ questions: [], missing: toCreate });
+    }
+  }
+  // Rien n'a pu être généré : on signale l'erreur (l'appelant se rabat sur la banque KTZ).
+  if (firstError && results.every((r) => r.questions.length === 0)) return { message: aiErrorMessage(firstError) };
   try {
-    const results = await Promise.all(
-      test.skills.map((skill, i) => {
-        const already = skill.questions.length;
-        const toCreate = Math.max(0, plan[i].total - already);
-        if (toCreate === 0) return Promise.resolve({ questions: [], missing: 0 });
-        return generateQuestionsForSkill(ctx, skill.name, toCreate, skill.questions.map((q) => q.prompt));
-      }),
-    );
     await db.$transaction(async (tx) => {
       for (const [i, skill] of test.skills.entries()) {
         const { questions } = results[i];
@@ -281,6 +292,8 @@ async function generateAllQuestions(testId: string): Promise<FormState> {
   } catch (e) {
     return { message: aiErrorMessage(e) };
   }
+  // Certaines compétences n'ont pas pu être générées : on complète gratuitement avec la banque KTZ.
+  if (firstError) return redirectAfterBank(testId, test.companyId, false);
   if (missing > 0) {
     redirect(`/tests/${testId}/questions?manquantes=${missing}`);
   }

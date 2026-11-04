@@ -18,6 +18,18 @@ type Config = {
 };
 
 const TIMEOUT_MS = 120_000;
+const MAX_RATE_RETRIES = 3;
+const MAX_WAIT_MS = 35_000;
+
+// Délai demandé par le service avant de réessayer (en-tête Retry-After, ou message
+// « Please try again in 10.9s » / « in 1m2.5s »), avec une petite marge. null si inconnu.
+export function retryDelayMs(retryAfter: string | null, body: string): number | null {
+  const header = Number.parseFloat(retryAfter ?? "");
+  if (Number.isFinite(header) && header >= 0) return Math.ceil(header * 1000) + 500;
+  const m = body.match(/try again in (?:(\d+)m)?([\d.]+)s/i);
+  if (m) return Math.ceil((Number(m[1] ?? 0) * 60 + Number(m[2])) * 1000) + 500;
+  return null;
+}
 
 // Extrait l'objet JSON d'une réponse (avec ou sans bloc ```json).
 export function extractJson(text: string): unknown {
@@ -33,21 +45,30 @@ export function openAiCompatibleProvider(cfg: Config): AiProvider {
   const model = () => process.env[cfg.modelVar]?.trim() || cfg.model;
 
   async function call(system: string, prompt: string, maxTokens: number) {
-    const res = await fetch(`${cfg.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env[cfg.keyVar]}` },
-      body: JSON.stringify({
-        model: model(),
-        temperature: 0.4,
-        max_tokens: maxTokens,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: prompt },
-        ],
-      }),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    });
+    let res: Response | undefined;
+    for (let attempt = 0; attempt <= MAX_RATE_RETRIES; attempt++) {
+      res = await fetch(`${cfg.baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env[cfg.keyVar]}` },
+        body: JSON.stringify({
+          model: model(),
+          temperature: 0.4,
+          max_tokens: maxTokens,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: prompt },
+          ],
+        }),
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+      // Limite par minute de la formule gratuite : on patiente le temps indiqué, puis on réessaie.
+      if (res.status !== 429 || attempt === MAX_RATE_RETRIES) break;
+      const wait = retryDelayMs(res.headers.get("retry-after"), await res.clone().text());
+      if (wait === null || wait > MAX_WAIT_MS) break;
+      await new Promise((r) => setTimeout(r, wait));
+    }
+    if (!res) throw new Error(`${cfg.name} : pas de réponse.`);
     if (!res.ok) {
       const detail = (await res.text()).slice(0, 300);
       throw new Error(`${cfg.name} : erreur ${res.status} ${detail}`);

@@ -75,6 +75,13 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/question
             )}
           </Notice>
         )}
+        {test.skills.some((s) => s.questions.some((q) => q.origin === "AI")) && (
+          <Notice tone="warning">
+            <strong>Questions rédigées par l&apos;IA : relisez-les avant de publier.</strong> L&apos;IA peut se tromper sur les
+            détails, surtout les IA gratuites : numéros de comptes (SYSCOHADA), taux (TVA 19 % en RCA), lois, chiffres et bonnes
+            réponses. Corrigez avec « Modifier », ou supprimez une question douteuse.
+          </Notice>
+        )}
         {manquantes && (
           <Notice tone="warning">
             L&apos;IA n&apos;a pas pu produire {manquantes} question(s) conforme(s). Complétez à la main ou relancez la

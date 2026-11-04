@@ -3,7 +3,7 @@ import * as z from "zod";
 
 vi.mock("server-only", () => ({}));
 
-import { extractJson, groqProvider, mistralProvider } from "@/lib/ai/openai-compatible";
+import { extractJson, groqProvider, mistralProvider, retryDelayMs } from "@/lib/ai/openai-compatible";
 
 const Schema = z.object({ questions: z.array(z.object({ prompt: z.string(), points: z.int() })) });
 const req = { system: "Tu rédiges des questions.", prompt: "Deux questions.", schema: Schema };
@@ -63,6 +63,25 @@ describe("IA gratuites (Mistral, Groq)", () => {
     expect(r.data.questions[0].points).toBe(1);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(JSON.parse(fetchMock.mock.calls[1][1].body).messages[1].content).toContain("ne respectait pas le format");
+  });
+
+  it("lit le délai demandé avant de réessayer", () => {
+    expect(retryDelayMs("2", "")).toBe(2500);
+    expect(retryDelayMs(null, "Please try again in 10.9125s. Need more tokens?")).toBe(11413);
+    expect(retryDelayMs(null, "Please try again in 1m2.5s")).toBe(63000);
+    expect(retryDelayMs(null, "rate limit")).toBeNull();
+  });
+
+  it("patiente et réessaie quand la limite par minute est atteinte", async () => {
+    vi.stubEnv("GROQ_API_KEY", "cle-de-test");
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('{"error":{"message":"Rate limit reached. Please try again in 0.01s."}}', { status: 429 }))
+      .mockResolvedValueOnce(reply('{"questions":[{"prompt":"Q1","points":1}]}'));
+    vi.stubGlobal("fetch", fetchMock);
+    const r = await groqProvider.generate(req);
+    expect(r.data.questions).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("signale une erreur du service (quota, clé refusée…)", async () => {

@@ -38,7 +38,10 @@ Règles impératives :
 - Ne pose jamais de question sur l'âge, la religion, l'ethnie, la santé, la situation familiale, l'opinion politique ou l'origine.
 - QCM : une seule interprétation possible, des distracteurs plausibles, pas de « toutes les réponses ci-dessus ».
 - Énoncés clairs et courts, lisibles sur un téléphone.
-- Questions ouvertes : une grille de correction avec des critères observables et un exemple de bonne réponse.`;
+- Questions ouvertes : une grille de correction avec des critères observables et un exemple de bonne réponse.
+- Exactitude avant tout : n'utilise que des faits, chiffres et références dont tu es sûr ; en cas de doute, préfère un cas pratique sans référence précise.
+- Comptabilité : plan SYSCOHADA révisé (OHADA), jamais le plan comptable français. Repères : 401 Fournisseurs, 411 Clients, 445 État-TVA récupérable, 443 État-TVA facturée, 521 Banques, 571 Caisse, 601 Achats de marchandises, 701 Ventes de marchandises, 702 Ventes de produits finis, 681 Dotations aux amortissements.
+- République centrafricaine : TVA au taux normal de 19 %, monnaie FCFA (XAF), langues officielles français et sango.`;
 
 function describeContext(ctx: TestContext) {
   const lang = ctx.language === "EN" ? "anglais" : "français";
