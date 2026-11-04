@@ -15,6 +15,13 @@ export const open = (type, prompt, rubric, example, time = 300) => ({
   points: rubric.reduce((a, [, p]) => a + p, 0),
 });
 
+// Remettre dans l'ordre : `items` sont donnés dans le BON ordre (ils seront mélangés pour le candidat).
+export const order = (prompt, items, explanation, time = 90, points = 2) => ({ type: "ORDERING", prompt, items, explanation, time, points });
+// Exercice de code JavaScript : `spec` = { functionName, starter, tests: [{ args, expected, hidden }] }.
+export const code = (prompt, spec, explanation, time = 600, points = 5) => ({ type: "CODE", prompt, spec, explanation, time, points });
+// Ajoute une illustration (fichier de public/illustrations) à une question.
+export const img = (q, file) => ({ ...q, image: `/illustrations/${file}` });
+
 export const TEMPLATES = [
   {
     profession: "Comptable",

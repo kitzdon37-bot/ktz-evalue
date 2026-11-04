@@ -148,6 +148,8 @@ enum QuestionType {
   FREE_TEXT
   SCENARIO
   ORAL
+  ORDERING // remettre des éléments dans l'ordre (interactif)
+  CODE // exercice de programmation, vérifié par des tests automatiques
 }
 
 enum QuestionOrigin {
@@ -242,6 +244,7 @@ model Question {
   skill            Skill          @relation(fields: [skillId], references: [id], onDelete: Cascade)
   type             QuestionType
   prompt           String         @db.Text
+  image            String?        @db.Text // illustration : chemin /illustrations/… ou image compressée (data:image/…)
   choices          Json? // [{ id, text }]
   correctAnswer    Json? // JAMAIS envoyé au candidat
   rubric           Json? // grille de correction, JAMAIS envoyée au candidat

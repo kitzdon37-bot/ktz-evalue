@@ -7,6 +7,12 @@ import { SkillInput } from "@/components/skill-input";
 import { btn, Card, input, label, Notice } from "@/components/ui";
 import {
   DURATIONS,
+  MAX_DURATION,
+  MAX_QUESTIONS,
+  MAX_SKILLS,
+  MIN_DURATION,
+  MIN_QUESTIONS,
+  suggestedDuration,
   LANGUAGE_LABELS,
   LANGUAGES,
   LEVEL_LABELS,
@@ -16,8 +22,6 @@ import {
 } from "@/lib/tests/model";
 import { bestJob, describeJob, normalize, searchJobs, searchSkills, suggestSkills } from "@/lib/tests/suggestions";
 import { createTest } from "../actions";
-
-const MAX_SKILLS = 6;
 
 // Groupe de choix en « pastilles » (boutons radio stylés).
 function ChoiceGroup({ legend, name, options, defaultValue }: { legend: string; name: string; options: string[][]; defaultValue: string }) {
@@ -64,6 +68,21 @@ export function NewTestForm({ aiAvailable }: { aiAvailable: boolean }) {
   const [custom, setCustom] = useState("");
   const proposals = useMemo(() => suggestSkills(title, chosen), [title, chosen]);
   const descRef = useRef<HTMLTextAreaElement>(null);
+
+  // ── Nombre de questions et durée (libres) : la durée suit le nombre de questions
+  // tant que le recruteur ne l'a pas choisie lui-même. ──
+  const [questionCount, setQuestionCount] = useState("15");
+  const [duration, setDuration] = useState(String(suggestedDuration(15)));
+  const [durationTouched, setDurationTouched] = useState(false);
+  const changeCount = (v: string) => {
+    setQuestionCount(v);
+    const n = Number.parseInt(v, 10);
+    if (!durationTouched && n > 0) setDuration(String(suggestedDuration(n)));
+  };
+  const pickDuration = (v: string) => {
+    setDuration(v);
+    setDurationTouched(true);
+  };
 
   const pickJob = (t: string) => {
     setTitle(t);
@@ -171,7 +190,7 @@ export function NewTestForm({ aiAvailable }: { aiAvailable: boolean }) {
                 Compétences suggérées {matched ? <>pour « {matched.title} »</> : null}
               </p>
               <span className="text-xs font-semibold text-stone-500">
-                {chosen.length} / {MAX_SKILLS} choisies
+                {chosen.length} choisie{chosen.length > 1 ? "s" : ""}
               </span>
             </div>
             <p className="mt-1 text-sm text-stone-600">Cliquez pour ajouter ou retirer. Vous pourrez les modifier et régler leur poids à l&apos;étape suivante.</p>
@@ -259,15 +278,49 @@ export function NewTestForm({ aiAvailable }: { aiAvailable: boolean }) {
           <ChoiceGroup legend="Niveau" name="level" defaultValue="CONFIRMED" options={LEVELS.map((l) => [l, LEVEL_LABELS[l]])} />
           <ChoiceGroup legend="Langue du test" name="language" defaultValue="FR" options={LANGUAGES.map((l) => [l, LANGUAGE_LABELS[l]])} />
           <div>
-            <ChoiceGroup legend="Durée totale" name="durationMinutes" defaultValue="30" options={DURATIONS.map((d) => [String(d), `${d} min`])} />
-            <Errors list={errors?.durationMinutes} />
+            <label htmlFor="questionCount" className={label}>
+              Nombre de questions <span className="font-normal text-stone-500">({MIN_QUESTIONS} minimum, autant que vous voulez)</span>
+            </label>
+            <input
+              id="questionCount"
+              name="questionCount"
+              type="number"
+              min={MIN_QUESTIONS}
+              max={MAX_QUESTIONS}
+              value={questionCount}
+              onChange={(e) => changeCount(e.target.value)}
+              className={`${input} mt-2`}
+            />
+            <Errors list={errors?.questionCount} />
           </div>
           <div>
-            <label htmlFor="questionCount" className={label}>
-              Nombre de questions <span className="font-normal text-stone-500">(10 à 30)</span>
+            <label htmlFor="durationMinutes" className={label}>
+              Durée totale <span className="font-normal text-stone-500">(en minutes)</span>
             </label>
-            <input id="questionCount" name="questionCount" type="number" min={10} max={30} defaultValue={15} className={`${input} mt-2`} />
-            <Errors list={errors?.questionCount} />
+            <input
+              id="durationMinutes"
+              name="durationMinutes"
+              type="number"
+              min={MIN_DURATION}
+              max={MAX_DURATION}
+              value={duration}
+              onChange={(e) => pickDuration(e.target.value)}
+              className={`${input} mt-2`}
+            />
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {DURATIONS.map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => pickDuration(String(d))}
+                  className={`rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${duration === String(d) ? "border-brand-600 bg-brand-600 text-white" : "border-stone-200 bg-white text-stone-700 hover:border-stone-300"}`}
+                >
+                  {d < 60 ? `${d} min` : `${d / 60} h`}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1 text-xs text-stone-500">Comptez environ 2 minutes par question.</p>
+            <Errors list={errors?.durationMinutes} />
           </div>
         </div>
 

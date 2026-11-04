@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { requireEditor } from "@/lib/tenant";
 import { fromDb, getCompanyTest } from "@/lib/tests/repository";
 import { isAiConfigured } from "@/lib/ai";
-import { checkQuestion, questionPlan, QUESTION_TYPE_LABELS, type QuestionType } from "@/lib/tests/model";
+import { checkQuestion, questionPlan, QUESTION_TYPE_LABELS, QUESTION_TYPES, type QuestionType } from "@/lib/tests/model";
 import { ActionButton } from "@/components/form";
 import { BackLink, btn, Card, input, Notice, PageTitle , Loading } from "@/components/ui";
 import { addQuestion } from "../../actions";
@@ -18,7 +18,7 @@ export const maxDuration = 300;
 
 async function Content({ params, searchParams }: PageProps<"/tests/[id]/questions">) {
   const { id } = await params;
-  const { manquantes, banque, sans, ia, retirees, ajoutees } = await searchParams;
+  const { manquantes, banque, sans, ia, retirees, ajoutees, demandees } = await searchParams;
   const list = (v: string | string[] | undefined) => (v ? String(v).split("|").join(", ") : "");
   const user = await requireEditor();
   const test = await getCompanyTest(id, user.companyId);
@@ -46,6 +46,7 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/question
   const totalWanted = plan.reduce((n, p) => n + p.total, 0);
   const totalHave = mainCount + reserveCount;
   const types = test.questionTypes as QuestionType[];
+  const otherTypes = QUESTION_TYPES.filter((t) => !types.includes(t));
 
   return (
     <>
@@ -64,6 +65,14 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/question
             {retirees && <> Compétences retirées faute de questions dans la banque : <strong>{list(retirees)}</strong> (vous pouvez les rajouter et écrire leurs questions).</>}
             {ajoutees && <> Compétences ajoutées pour compléter le test : <strong>{list(ajoutees)}</strong>.</>}
             {sans && <> Pas encore de questions dans la banque pour : <strong>{list(sans)}</strong> — ajoutez-les à la main ci-dessous.</>}
+            {demandees && (
+              <>
+                {" "}Vous aviez demandé <strong>{String(demandees)} questions</strong>, mais la banque n&apos;en a que{" "}
+                <strong>{test.questionCount}</strong> pour ce métier : le test a été réglé sur {test.questionCount}. Pour en avoir plus,
+                ajoutez des questions à la main ci-dessous{aiAvailable ? " ou générez-les avec l'IA" : ""}, puis augmentez le nombre dans
+                « Paramètres ».
+              </>
+            )}
           </Notice>
         )}
         {manquantes && (
@@ -111,6 +120,15 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/question
                     {QUESTION_TYPE_LABELS[t]}
                   </option>
                 ))}
+                {otherTypes.length > 0 && (
+                  <optgroup label="Autres types (interactifs, code…)">
+                    {otherTypes.map((t) => (
+                      <option key={t} value={t}>
+                        {QUESTION_TYPE_LABELS[t]}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
               <ActionButton className={btn.secondary}>+ Ajouter une question</ActionButton>
             </form>

@@ -11,6 +11,8 @@ export const QUESTION_TYPES = [
   "FREE_TEXT",
   "SCENARIO",
   "ORAL",
+  "ORDERING",
+  "CODE",
 ] as const;
 export type QuestionType = (typeof QUESTION_TYPES)[number];
 
@@ -20,7 +22,23 @@ export type Level = (typeof LEVELS)[number];
 export const LANGUAGES = ["FR", "EN"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
-export const DURATIONS = [15, 30, 45, 60] as const;
+// Durée libre (en minutes) ; ces valeurs ne sont que des raccourcis proposés à l'écran.
+export const DURATIONS = [15, 30, 45, 60, 90, 120] as const;
+export const MIN_DURATION = 5;
+export const MAX_DURATION = 600; // 10 heures, limite de sécurité
+
+// Nombre de compétences et de questions libres. Seules limites :
+// - chaque compétence pèse au moins 1 % (les poids font 100 %), donc 100 compétences au plus ;
+// - 10 questions minimum pour un test fiable, 500 au plus (limite de sécurité).
+export const MAX_SKILLS = 100;
+export const MIN_QUESTIONS = 10;
+export const MAX_QUESTIONS = 500;
+
+// Durée conseillée pour un nombre de questions : environ 2 minutes par question, arrondie à 5 min.
+export function suggestedDuration(questionCount: number): number {
+  const minutes = Math.ceil((Math.max(1, questionCount) * 2) / 5) * 5;
+  return Math.min(MAX_DURATION, Math.max(15, minutes));
+}
 
 export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   MCQ_SINGLE: "QCM (une réponse)",
@@ -30,7 +48,13 @@ export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   FREE_TEXT: "Texte libre",
   SCENARIO: "Mise en situation",
   ORAL: "Question orale",
+  ORDERING: "Remettre dans l'ordre",
+  CODE: "Exercice de code",
 };
+
+// Types que l'IA sait rédiger (les exercices interactifs sont écrits par la banque ou le recruteur).
+export const AI_TYPES = ["MCQ_SINGLE", "MCQ_MULTI", "TRUE_FALSE", "SHORT_ANSWER", "FREE_TEXT", "SCENARIO", "ORAL"] as const satisfies readonly QuestionType[];
+export const isAiType = (t: QuestionType): t is (typeof AI_TYPES)[number] => (AI_TYPES as readonly string[]).includes(t);
 
 export const LEVEL_LABELS: Record<Level, string> = {
   BEGINNER: "Débutant",
@@ -50,7 +74,7 @@ export const TEST_STATUS_LABELS = {
 export const ROLE_LABELS = { OWNER: "Propriétaire", RECRUITER: "Recruteur", VIEWER: "Lecteur" } as const;
 
 // Types corrigés automatiquement par le serveur, sans IA.
-export const AUTO_GRADED: readonly QuestionType[] = ["MCQ_SINGLE", "MCQ_MULTI", "TRUE_FALSE", "SHORT_ANSWER"];
+export const AUTO_GRADED: readonly QuestionType[] = ["MCQ_SINGLE", "MCQ_MULTI", "TRUE_FALSE", "SHORT_ANSWER", "ORDERING", "CODE"];
 // Types corrigés par l'IA avec une grille.
 export const RUBRIC_GRADED: readonly QuestionType[] = ["FREE_TEXT", "SCENARIO", "ORAL"];
 
@@ -63,10 +87,24 @@ export function isMcq(type: QuestionType) {
 export const ChoiceSchema = z.object({ id: z.string().min(1), text: z.string() });
 export type Choice = z.infer<typeof ChoiceSchema>;
 
+// Exercice de code : le candidat écrit une fonction, vérifiée par des tests (arguments → résultat attendu).
+// Les tests « cachés » ne sont jamais montrés au candidat : ils évitent les réponses écrites pour les exemples.
+export const CodeTestSchema = z.object({ args: z.array(z.unknown()), expected: z.unknown(), hidden: z.boolean().default(false) });
+export const CodeSpecSchema = z.object({
+  language: z.literal("javascript").default("javascript"),
+  functionName: z.string(),
+  starter: z.string(),
+  tests: z.array(CodeTestSchema),
+});
+export type CodeSpec = z.infer<typeof CodeSpecSchema>;
+export type CodeTest = z.infer<typeof CodeTestSchema>;
+
 export const CorrectAnswerSchema = z.object({
   choiceIds: z.array(z.string()).optional(), // QCM
   value: z.union([z.boolean(), z.string()]).optional(), // vrai/faux ou réponse courte
   tolerance: z.number().nonnegative().nullable().optional(), // réponse chiffrée
+  order: z.array(z.string()).optional(), // remettre dans l'ordre : identifiants dans le bon ordre
+  code: CodeSpecSchema.optional(), // exercice de code
 });
 export type CorrectAnswer = z.infer<typeof CorrectAnswerSchema>;
 
@@ -79,6 +117,8 @@ export type Rubric = z.infer<typeof RubricSchema>;
 export type QuestionData = {
   type: QuestionType;
   prompt: string;
+  /** Illustration facultative : /illustrations/… (banque KTZ) ou image compressée data:image/…. */
+  image?: string | null;
   choices: Choice[] | null;
   correctAnswer: CorrectAnswer | null;
   rubric: Rubric | null;
@@ -91,6 +131,19 @@ export type QuestionData = {
 export function choiceId(index: number) {
   return String.fromCharCode(97 + index); // a, b, c…
 }
+
+// Illustrations acceptées : fichiers de la banque KTZ, ou image envoyée par le recruteur et
+// compressée dans le navigateur (JPEG, PNG ou WebP, 400 Ko au plus). Jamais de SVG envoyé :
+// un SVG peut contenir du script.
+export const MAX_IMAGE_CHARS = 550_000; // ≈ 400 Ko une fois décodé
+export function isAllowedImage(src: string | null | undefined): src is string {
+  if (!src) return false;
+  if (/^\/illustrations\/[a-z0-9-]+\.(svg|png|jpg|webp)$/.test(src)) return true;
+  return src.length <= MAX_IMAGE_CHARS && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/.test(src);
+}
+
+// Nom de fonction JavaScript valide (pour les exercices de code).
+export const isIdentifier = (s: string) => /^[A-Za-z_$][\w$]{0,40}$/.test(s);
 
 // ───── Contrôles de qualité (section 5 du cahier des charges) ─────
 
@@ -121,6 +174,18 @@ export function checkQuestion(q: QuestionData): string[] {
     const criteria = q.rubric?.criteria.filter((c) => c.label.trim()) ?? [];
     if (criteria.length === 0) problems.push("Ajoutez au moins un critère à la grille de correction.");
   }
+  if (q.type === "ORDERING") {
+    const items = (q.choices ?? []).filter((c) => c.text.trim());
+    if (items.length < 3) problems.push("Indiquez au moins 3 éléments à remettre dans l'ordre.");
+    if (new Set(items.map((c) => c.text.trim().toLowerCase())).size !== items.length) problems.push("Deux éléments sont identiques.");
+  }
+  if (q.type === "CODE") {
+    const code = q.correctAnswer?.code;
+    if (!code || !isIdentifier(code.functionName)) problems.push("Indiquez le nom de la fonction à écrire (ex. : somme).");
+    if (!code || code.tests.length === 0) problems.push("Ajoutez au moins un test (arguments et résultat attendu).");
+    else if (!code.tests.some((t) => !t.hidden)) problems.push("Gardez au moins un test visible : il sert d'exemple au candidat.");
+  }
+  if (q.image && !isAllowedImage(q.image)) problems.push("L'illustration n'est pas valide (image JPEG, PNG ou WebP de 400 Ko au plus).");
   return problems;
 }
 

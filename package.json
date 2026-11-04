@@ -23,6 +23,7 @@
     "next": "16.4.3",
     "pdfkit": "^0.20.2",
     "pg": "^8.23.1",
+    "quickjs-emscripten": "^0.31.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "read-excel-file": "^9.3.12",

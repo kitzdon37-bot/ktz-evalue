@@ -31,6 +31,8 @@ async function Content({ params }: PageProps<"/tests/[id]/parametres">) {
         values={{
           title: test.title,
           passThreshold: test.passThreshold,
+          durationMinutes: test.durationMinutes,
+          questionCount: test.questionCount,
           deadline: toDateInput(test.deadline),
           shuffleQuestions: test.shuffleQuestions,
           shuffleChoices: test.shuffleChoices,

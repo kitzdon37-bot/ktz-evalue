@@ -8,7 +8,8 @@ import {
   isMcq,
   LEVEL_LABELS,
   QUESTION_TYPE_LABELS,
-  QUESTION_TYPES,
+  AI_TYPES,
+  isAiType,
   LEVELS,
   RUBRIC_GRADED,
   type Language,
@@ -82,7 +83,7 @@ Propose les 3 à 6 compétences clés à évaluer pour ce poste, avec leur poids
 
 // Format plat demandé à l'IA (plus fiable qu'un format avec variantes).
 const GeneratedQuestionSchema = z.object({
-  type: z.enum(QUESTION_TYPES),
+  type: z.enum(AI_TYPES),
   prompt: z.string(),
   choices: z.array(z.string()),
   correctChoiceIndexes: z.array(z.int()),
@@ -135,8 +136,14 @@ const FORMAT_RULES = `Format de chaque question :
 - points : barème (1 à 2 pour une question fermée, 4 à 10 pour une question ouverte).
 - difficulty : BEGINNER, CONFIRMED ou EXPERT.`;
 
+// Types demandés à l'IA : ceux du test qu'elle sait rédiger (QCM si aucun).
+function aiTypes(ctx: TestContext): QuestionType[] {
+  const types = ctx.questionTypes.filter(isAiType);
+  return types.length ? types : ["MCQ_SINGLE"];
+}
+
 function allowedTypes(ctx: TestContext) {
-  return ctx.questionTypes.map((t) => `${t} (${QUESTION_TYPE_LABELS[t]})`).join(", ");
+  return aiTypes(ctx).map((t) => `${t} (${QUESTION_TYPE_LABELS[t]})`).join(", ");
 }
 
 async function askQuestions(ctx: TestContext, skillName: string, count: number, avoid: string[]) {
@@ -154,12 +161,30 @@ ${avoid.length ? `Ne reprends pas ces questions déjà posées :\n${avoid.map((a
 ${FORMAT_RULES}`,
     },
   );
-  return result.questions.filter((q) => ctx.questionTypes.includes(q.type)).map(toQuestionData);
+  const types = aiTypes(ctx);
+  return result.questions.filter((q) => types.includes(q.type)).map(toQuestionData);
 }
 
 // Génère les questions d'une compétence. Les questions non conformes sont
 // redemandées une fois ; celles qui restent non conformes sont écartées et signalées.
+// Au-delà de BATCH questions, on procède par lots pour ne pas dépasser la taille d'une réponse de l'IA.
+const BATCH = 10;
+
 export async function generateQuestionsForSkill(ctx: TestContext, skillName: string, count: number, avoid: string[] = []) {
+  if (count > BATCH) {
+    const all: Awaited<ReturnType<typeof generateBatch>>["questions"] = [];
+    let missing = 0;
+    for (let left = count; left > 0; left -= BATCH) {
+      const part = await generateBatch(ctx, skillName, Math.min(BATCH, left), [...avoid, ...all.map((q) => q.prompt)]);
+      all.push(...part.questions);
+      missing += part.missing;
+    }
+    return { questions: all, missing };
+  }
+  return generateBatch(ctx, skillName, count, avoid);
+}
+
+async function generateBatch(ctx: TestContext, skillName: string, count: number, avoid: string[]) {
   const first = await askQuestions(ctx, skillName, count, avoid);
   let valid = first.filter((q) => checkQuestion(q).length === 0);
   let rejected = first.length - valid.length + Math.max(0, count - first.length);

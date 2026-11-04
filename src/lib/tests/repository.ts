@@ -6,6 +6,7 @@ import {
   CorrectAnswerSchema,
   RubricSchema,
   ChoiceSchema,
+  isAllowedImage,
   type QuestionData,
   type QuestionType,
   type Level,
@@ -31,13 +32,18 @@ export type CompanyTest = Awaited<ReturnType<typeof getCompanyTest>>;
 type DbQuestion = CompanyTest["skills"][number]["questions"][number];
 
 // Convertit une question de la base vers le format commun (champs JSON vérifiés).
-export function fromDb(q: Pick<DbQuestion, "type" | "prompt" | "choices" | "correctAnswer" | "rubric" | "explanation" | "difficulty" | "suggestedTimeSec" | "points">): QuestionData {
+export function fromDb(
+  q: Pick<DbQuestion, "type" | "prompt" | "choices" | "correctAnswer" | "rubric" | "explanation" | "difficulty" | "suggestedTimeSec" | "points"> & {
+    image?: string | null;
+  },
+): QuestionData {
   const choices = z.array(ChoiceSchema).safeParse(q.choices);
   const correct = CorrectAnswerSchema.safeParse(q.correctAnswer);
   const rubric = RubricSchema.safeParse(q.rubric);
   return {
     type: q.type as QuestionType,
     prompt: q.prompt,
+    image: isAllowedImage(q.image) ? q.image : null,
     choices: choices.success ? choices.data : null,
     correctAnswer: correct.success ? correct.data : null,
     rubric: rubric.success ? rubric.data : null,
@@ -56,6 +62,7 @@ export function toDb(q: QuestionData) {
   return {
     type: q.type,
     prompt: q.prompt,
+    image: isAllowedImage(q.image) ? q.image : null,
     choices: json(q.choices),
     correctAnswer: json(q.correctAnswer),
     rubric: json(q.rubric),

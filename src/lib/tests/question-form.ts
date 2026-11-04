@@ -2,6 +2,7 @@
 // Fonction pure, testée dans tests/question-form.test.ts.
 import {
   choiceId,
+  isAllowedImage,
   isMcq,
   LEVELS,
   RUBRIC_GRADED,
@@ -12,6 +13,29 @@ import {
 
 export const MAX_CHOICES = 6;
 export const MAX_CRITERIA = 6;
+export const MAX_ORDER_ITEMS = 8;
+export const MAX_CODE_TESTS = 8;
+
+// Valeur saisie par le recruteur pour un test de code : du JSON (5, "Bangui", [1, 2], true…),
+// ou, à défaut, le texte tel quel (Bangui sans guillemets devient "Bangui").
+export function looseJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
+// Arguments d'un appel : « 2, 3 » ou « [1, 2, 3] » (un seul argument tableau) ou « "Bangui" ».
+export function looseArgs(text: string): unknown[] {
+  try {
+    const v = JSON.parse(`[${text}]`);
+    if (Array.isArray(v)) return v;
+  } catch {
+    // texte libre : un seul argument chaîne
+  }
+  return [text];
+}
 
 function str(fd: FormData, key: string) {
   const v = fd.get(key);
@@ -25,9 +49,11 @@ function int(fd: FormData, key: string, fallback: number) {
 
 export function parseQuestionForm(type: QuestionType, fd: FormData): QuestionData {
   const difficulty = str(fd, "difficulty") as Level;
+  const image = str(fd, "image");
   const data: QuestionData = {
     type,
     prompt: str(fd, "prompt"),
+    image: isAllowedImage(image) ? image : null,
     choices: null,
     correctAnswer: null,
     rubric: null,
@@ -67,6 +93,36 @@ export function parseQuestionForm(type: QuestionType, fd: FormData): QuestionDat
     };
   }
 
+  if (type === "ORDERING") {
+    // Les éléments sont saisis dans le BON ordre ; ils seront mélangés pour chaque candidat.
+    const items = [];
+    for (let i = 0; i < MAX_ORDER_ITEMS; i++) {
+      const text = str(fd, `item_${i}`);
+      if (text) items.push({ id: choiceId(items.length), text });
+    }
+    data.choices = items;
+    data.correctAnswer = { order: items.map((c) => c.id) };
+  }
+
+  if (type === "CODE") {
+    const tests = [];
+    for (let i = 0; i < MAX_CODE_TESTS; i++) {
+      const args = str(fd, `test_args_${i}`);
+      const expected = str(fd, `test_expected_${i}`);
+      if (!args && !expected) continue;
+      tests.push({ args: looseArgs(args), expected: looseJson(expected), hidden: fd.get(`test_hidden_${i}`) === "on" });
+    }
+    const raw = fd.get("starter");
+    data.correctAnswer = {
+      code: {
+        language: "javascript",
+        functionName: str(fd, "functionName"),
+        starter: typeof raw === "string" ? raw.replace(/\r\n/g, "\n") : "",
+        tests,
+      },
+    };
+  }
+
   if (RUBRIC_GRADED.includes(type)) {
     const criteria = [];
     for (let i = 0; i < MAX_CRITERIA; i++) {
@@ -83,6 +139,22 @@ export function parseQuestionForm(type: QuestionType, fd: FormData): QuestionDat
 // Question vide créée par « Ajouter une question ».
 export function blankQuestion(type: QuestionType, difficulty: Level): QuestionData {
   const open = RUBRIC_GRADED.includes(type);
+  if (type === "ORDERING") {
+    return {
+      type, prompt: "", image: null, explanation: null, difficulty, rubric: null,
+      choices: [0, 1, 2, 3].map((i) => ({ id: choiceId(i), text: "" })),
+      correctAnswer: null, suggestedTimeSec: 90, points: 2,
+    };
+  }
+  if (type === "CODE") {
+    return {
+      type, prompt: "", image: null, explanation: null, difficulty, rubric: null, choices: null,
+      correctAnswer: {
+        code: { language: "javascript", functionName: "solution", starter: "function solution(a, b) {\n  // Votre code ici\n}\n", tests: [] },
+      },
+      suggestedTimeSec: 600, points: 5,
+    };
+  }
   return {
     type,
     prompt: "",

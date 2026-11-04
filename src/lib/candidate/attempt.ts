@@ -11,6 +11,7 @@ import { computeScores } from "@/lib/scoring/score";
 import { notifyRecruiterOfCompletion } from "@/lib/messages";
 import { analyzeAttempt, processGradingQueue } from "@/lib/results";
 import { drawQuestions, type DrawnQuestion } from "./draw";
+import { codePoints, MAX_CODE_CHARS, runCodeTests } from "@/lib/scoring/code-runner";
 
 // Marge accordée pour la latence réseau (3G) avant de considérer un temps comme dépassé.
 const GRACE_SEC = 15;
@@ -66,7 +67,12 @@ export async function startAttempt(inv: LoadedInvitation, info: { deviceId: stri
     inv.test.skills.map((s) => ({
       questions: s.questions.map((q) => {
         const d = fromDb(q);
-        return { id: q.id, isReserve: q.isReserve, choiceIds: d.choices ? d.choices.map((c) => c.id) : null };
+        return {
+          id: q.id,
+          isReserve: q.isReserve,
+          choiceIds: d.choices ? d.choices.map((c) => c.id) : null,
+          alwaysShuffle: d.type === "ORDERING",
+        };
       }),
     })),
     { shuffleQuestions: inv.test.shuffleQuestions, shuffleChoices: inv.test.shuffleChoices },
@@ -143,8 +149,40 @@ function readContent(type: QuestionType, form: FormData, choiceOrder: string[] |
     const v = form.get("tf");
     return v === "true" ? { value: true } : v === "false" ? { value: false } : null;
   }
+  if (type === "ORDERING") return { order: readOrder(form, choiceOrder ?? []) };
+  if (type === "CODE") {
+    const code = String(form.get("code") ?? "").slice(0, MAX_CODE_CHARS);
+    return code.trim() ? { code } : null;
+  }
   const text = String(form.get("text") ?? "").slice(0, 10_000);
   return text.trim() ? { text } : null;
+}
+
+// Ordre choisi par le candidat : chaque élément a un champ « pos_<id> » (rang 1, 2, 3…), tenu à jour
+// par les boutons ou le glisser-déposer, et modifiable à la main sans JavaScript. Les rangs
+// manquants ou en double sont départagés par l'ordre d'affichage.
+export function readOrder(form: FormData, shown: string[]): string[] {
+  const rank = (id: string, i: number) => {
+    const n = Number.parseInt(String(form.get(`pos_${id}`) ?? ""), 10);
+    return Number.isFinite(n) ? n : i + 1;
+  };
+  return shown
+    .map((id, i) => ({ id, r: rank(id, i), i }))
+    .sort((a, b) => a.r - b.r || a.i - b.i)
+    .map((x) => x.id);
+}
+
+// Note automatique d'une réponse : exécution des tests pour un exercice de code (le résultat
+// est gardé dans la réponse pour le recruteur), correction immédiate pour les autres types fermés.
+async function autoGrade(q: QuestionData, content: AnswerContent | null): Promise<{ score: number | null; content: AnswerContent | null }> {
+  if (!AUTO_GRADED.includes(q.type)) return { score: null, content };
+  if (q.type === "CODE") {
+    const spec = q.correctAnswer?.code;
+    if (!content?.code || !spec) return { score: 0, content };
+    const tests = await runCodeTests(content.code, spec);
+    return { score: codePoints(tests, q.points), content: { ...content, tests } };
+  }
+  return { score: gradeClosed(q, content), content };
 }
 
 // Enregistre la réponse envoyée par le candidat pour la question `questionId`.
@@ -170,7 +208,9 @@ async function saveAnswerAndAdvance(
   const started = (attempt.questionStartedAt ?? attempt.startedAt).getTime();
   const maxSec = q.data.suggestedTimeSec * timeFactor(inv);
   const timeSpentSec = Math.round(Math.min(maxSec, Math.max(0, (opts.advanceStart.getTime() - started) / 1000)));
-  const autoScore = AUTO_GRADED.includes(q.data.type) ? gradeClosed(q.data, content) : null;
+  const graded = await autoGrade(q.data, content);
+  const autoScore = graded.score;
+  content = graded.content;
   const order = attemptOrder(attempt);
   const nextIndex = attempt.currentIndex + 1;
 

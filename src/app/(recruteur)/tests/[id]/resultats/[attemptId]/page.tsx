@@ -8,6 +8,7 @@ import { canEdit, requireCompany } from "@/lib/tenant";
 import { fromDb } from "@/lib/tests/repository";
 import { isMcq, QUESTION_TYPE_LABELS, RUBRIC_GRADED, type QuestionType } from "@/lib/tests/model";
 import { attemptOrder } from "@/lib/candidate/attempt";
+import { expectedOrder, type AnswerContent } from "@/lib/scoring/grade";
 import { RELIABILITY_LABELS, type ReliabilityLevel } from "@/lib/scoring/reliability";
 import { formatDuration, RECRUITER_STATUS_LABELS } from "@/lib/results-view";
 import { ActionButton } from "@/components/form";
@@ -183,7 +184,7 @@ async function Content({ params }: PageProps<"/tests/[id]/resultats/[attemptId]"
           if (!entry) return null;
           const { q, data, skill } = entry;
           const a = answers.get(q.id);
-          const content = (a?.content ?? null) as { choiceIds?: string[]; value?: boolean; text?: string } | null;
+          const content = (a?.content ?? null) as AnswerContent | null;
           const correct = new Set(data.correctAnswer?.choiceIds ?? []);
           const given = new Set(content?.choiceIds ?? []);
           const got = a ? (a.overrideScore ?? a.autoScore ?? a.aiScore) : null;
@@ -200,6 +201,64 @@ async function Content({ params }: PageProps<"/tests/[id]/resultats/[attemptId]"
                 </p>
               </div>
               <p className="mt-1 text-stone-900">{data.prompt}</p>
+              {data.image && (
+                // eslint-disable-next-line @next/next/no-img-element -- illustration locale ou data:, déjà compressée
+                <img src={data.image} alt="Illustration de la question" className="mt-2 max-h-48 w-auto rounded-lg border border-stone-200" />
+              )}
+
+              {data.type === "ORDERING" && (
+                <div className="mt-2 grid gap-3 text-sm sm:grid-cols-2">
+                  <div>
+                    <p className="text-xs font-semibold text-stone-500">Ordre du candidat</p>
+                    <ol className="mt-1 space-y-1">
+                      {(content?.order ?? []).map((cid, k) => {
+                        const ok = expectedOrder(data)[k] === cid;
+                        return (
+                          <li key={cid} className={`rounded px-2 py-1 ${ok ? "bg-emerald-50 text-emerald-900" : "bg-red-50 text-red-800"}`}>
+                            {k + 1}. {data.choices?.find((c) => c.id === cid)?.text} {ok ? "✓" : "✗"}
+                          </li>
+                        );
+                      })}
+                      {!content?.order && <li className="text-stone-500">Pas de réponse</li>}
+                    </ol>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-stone-500">Bon ordre</p>
+                    <ol className="mt-1 space-y-1 text-stone-700">
+                      {expectedOrder(data).map((cid, k) => (
+                        <li key={cid} className="px-2 py-1">
+                          {k + 1}. {data.choices?.find((c) => c.id === cid)?.text}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                </div>
+              )}
+
+              {data.type === "CODE" && (
+                <div className="mt-2 space-y-2">
+                  {content?.code ? (
+                    <pre className="max-h-80 overflow-auto rounded-lg bg-stone-900 p-3 font-mono text-xs leading-relaxed text-stone-100">{content.code}</pre>
+                  ) : (
+                    <p className="text-sm text-stone-500">Pas de code envoyé.</p>
+                  )}
+                  {content?.tests && (
+                    <ul className="space-y-1 text-sm">
+                      {content.tests.map((t, k) => {
+                        const spec = data.correctAnswer?.code?.tests[k];
+                        return (
+                          <li key={k} className={`rounded px-2 py-1 font-mono text-xs ${t.passed ? "bg-emerald-50 text-emerald-900" : "bg-red-50 text-red-800"}`}>
+                            {t.passed ? "✓" : "✗"} {data.correctAnswer?.code?.functionName}({(spec?.args ?? []).map((x) => JSON.stringify(x)).join(", ")}) → attendu{" "}
+                            {JSON.stringify(spec?.expected)}
+                            {!t.passed && (t.error ? ` · erreur : ${t.error}` : ` · obtenu : ${t.got ?? "rien"}`)}
+                            {t.hidden && <span className="ml-1 rounded bg-stone-200 px-1 text-stone-700">test caché</span>}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              )}
 
               {isMcq(data.type) && (
                 <ul className="mt-2 space-y-1 text-sm">

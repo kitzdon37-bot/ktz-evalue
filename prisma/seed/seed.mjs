@@ -5,8 +5,11 @@ import pg from "pg";
 import { randomBytes } from "node:crypto";
 import { TEMPLATES as BASE_TEMPLATES } from "./templates.mjs";
 import { TEMPLATES_2 } from "./templates-2.mjs";
+import { TEMPLATES_3 } from "./templates-3.mjs";
+import { TEMPLATES_4 } from "./templates-4.mjs";
+import { MODULES } from "./modules.mjs";
 
-const TEMPLATES = [...BASE_TEMPLATES, ...TEMPLATES_2];
+const TEMPLATES = [...BASE_TEMPLATES, ...TEMPLATES_2, ...TEMPLATES_3, ...TEMPLATES_4, ...MODULES];
 
 config({ path: ".env.local", quiet: true });
 
@@ -23,6 +26,11 @@ function toRow(q) {
     base.correctAnswer = { value: q.answer };
   } else if (q.type === "SHORT_ANSWER") {
     base.correctAnswer = q.answer;
+  } else if (q.type === "ORDERING") {
+    base.choices = q.items.map((text, i) => ({ id: letter(i), text }));
+    base.correctAnswer = { order: q.items.map((_, i) => letter(i)) };
+  } else if (q.type === "CODE") {
+    base.correctAnswer = { code: { language: "javascript", ...q.spec, tests: q.spec.tests.map((t) => ({ hidden: false, ...t })) } };
   } else {
     base.rubric = { criteria: q.rubric.map(([label, points]) => ({ label, points })), example: q.example ?? null };
   }
@@ -54,8 +62,8 @@ try {
       for (const [qi, q] of s.questions.entries()) {
         const row = toRow(q);
         await client.query(
-          `INSERT INTO "Question" (id, "skillId", type, prompt, choices, "correctAnswer", rubric, explanation, difficulty, "suggestedTimeSec", points, origin, position)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'BANK', $12)`,
+          `INSERT INTO "Question" (id, "skillId", type, prompt, choices, "correctAnswer", rubric, explanation, difficulty, "suggestedTimeSec", points, origin, position, image)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'BANK', $12, $13)`,
           [
             id(),
             skillId,
@@ -69,6 +77,7 @@ try {
             q.time,
             q.points,
             qi,
+            q.image ?? null,
           ],
         );
       }

@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "@/lib/db";
-import { evenWeights, questionPlan, type QuestionType } from "./model";
+import { evenWeights, MIN_QUESTIONS, questionPlan, type QuestionType } from "./model";
 import { fromDb, getCompanyTest, toDb } from "./repository";
 import { normalize, skillSimilarity } from "./suggestions";
 
@@ -14,7 +14,6 @@ import { normalize, skillSimilarity } from "./suggestions";
 // stricte entre métiers différents (« Contrôle des accès » ≠ « Contrôle et rigueur » du comptable).
 const MIN_SIMILARITY = 0.5;
 const MIN_SIMILARITY_OTHER_JOB = 0.75;
-const MIN_QUESTIONS = 10; // minimum imposé pour publier un test
 
 export type BankResult = {
   added: number;
@@ -101,7 +100,6 @@ export async function fillFromBank(testId: string, companyId: string): Promise<B
     for (const b of bank.filter((x) => x.template?.id === bestTemplate)) {
       if (total >= Math.max(MIN_QUESTIONS, test.questionCount)) break;
       if (keptNames.some((n) => skillSimilarity(n, b.name) >= MIN_SIMILARITY)) continue;
-      if (covered.length + extra.length >= 6) break; // 6 compétences au plus
       const rows = take(b.questions.filter((q) => allowed.has(q.type as QuestionType)), 8);
       if (!rows.length) continue;
       extra.push({ name: b.name, rows });
@@ -153,7 +151,7 @@ export async function fillFromBank(testId: string, companyId: string): Promise<B
 
 // Répartit questions posées / réserve selon les poids, comme pour la génération par IA,
 // en garantissant au moins `questionCount` questions posées.
-async function splitReserve(testId: string, companyId: string, questionCount: number) {
+export async function splitReserve(testId: string, companyId: string, questionCount: number) {
   const test = await getCompanyTest(testId, companyId);
   const plan = questionPlan(test.skills.map((s) => s.weight), questionCount);
   const main: string[] = [];

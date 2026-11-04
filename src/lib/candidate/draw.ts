@@ -3,7 +3,8 @@
 // Fonction pure, testée dans tests/candidate.test.ts.
 
 export type DrawSkill = {
-  questions: { id: string; isReserve: boolean; choiceIds: string[] | null }[];
+  /** alwaysShuffle : éléments à remettre dans l'ordre, toujours mélangés (jamais dans le bon ordre). */
+  questions: { id: string; isReserve: boolean; choiceIds: string[] | null; alwaysShuffle?: boolean }[];
 };
 
 export type DrawnQuestion = { questionId: string; choiceOrder: string[] | null };
@@ -15,6 +16,16 @@ function shuffle<T>(list: T[], random: () => number): T[] {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+// Mélange garanti différent de l'ordre d'origine (s'il y a au moins 2 éléments).
+function scramble(ids: string[], random: () => number): string[] {
+  if (ids.length < 2) return [...ids];
+  for (let i = 0; i < 8; i++) {
+    const s = shuffle(ids, random);
+    if (s.some((id, k) => id !== ids[k])) return s;
+  }
+  return [...ids.slice(1), ids[0]];
 }
 
 export function drawQuestions(
@@ -35,6 +46,12 @@ export function drawQuestions(
   const ordered = opts.shuffleQuestions ? shuffle(picked, random) : picked;
   return ordered.map((q) => ({
     questionId: q.id,
-    choiceOrder: q.choiceIds ? (opts.shuffleChoices ? shuffle(q.choiceIds, random) : q.choiceIds) : null,
+    choiceOrder: q.choiceIds
+      ? q.alwaysShuffle
+        ? scramble(q.choiceIds, random)
+        : opts.shuffleChoices
+          ? shuffle(q.choiceIds, random)
+          : q.choiceIds
+      : null,
   }));
 }

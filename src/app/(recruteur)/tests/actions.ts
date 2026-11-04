@@ -16,17 +16,22 @@ import {
   checkQuestion,
   checkTest,
   checkWeights,
-  DURATIONS,
+  MAX_DURATION,
+  MAX_QUESTIONS,
+  MAX_SKILLS,
+  MIN_DURATION,
+  MIN_QUESTIONS,
   evenWeights,
   LANGUAGES,
   LEVELS,
   QUESTION_TYPES,
+  isAiType,
   questionPlan,
   type QuestionType,
 } from "@/lib/tests/model";
 import { blankQuestion, parseQuestionForm } from "@/lib/tests/question-form";
 import { copySkills, fromDb, getCompanyTest, toDb, type CompanyTest } from "@/lib/tests/repository";
-import { fillFromBank } from "@/lib/tests/bank";
+import { fillFromBank, splitReserve } from "@/lib/tests/bank";
 import { suggestSkills } from "@/lib/tests/suggestions";
 import type { FormState } from "@/lib/auth/schemas";
 
@@ -67,21 +72,31 @@ async function contextFor(test: CompanyTest, companyId: string): Promise<TestCon
 
 // ───── Étape 1 : informations du poste ─────
 
+const DurationSchema = z.coerce
+  .number({ error: "Indiquez une durée en minutes." })
+  .int({ error: "Indiquez une durée en minutes entières." })
+  .min(MIN_DURATION, { error: `${MIN_DURATION} minutes minimum.` })
+  .max(MAX_DURATION, { error: `${MAX_DURATION} minutes maximum.` });
+
+const QuestionCountSchema = z.coerce
+  .number({ error: "Indiquez un nombre de questions." })
+  .int({ error: "Indiquez un nombre entier." })
+  .min(MIN_QUESTIONS, { error: `${MIN_QUESTIONS} questions minimum.` })
+  .max(MAX_QUESTIONS, { error: `${MAX_QUESTIONS} questions maximum.` });
+
 const CreateTestSchema = z.object({
   jobTitle: z.string().trim().min(2, { error: "Indiquez l'intitulé du poste." }).max(120),
   jobDescription: z.string().trim().max(20000, { error: "Texte trop long (20 000 caractères maximum)." }),
   level: z.enum(LEVELS),
   language: z.enum(LANGUAGES),
-  durationMinutes: z.coerce.number().refine((d) => (DURATIONS as readonly number[]).includes(d), {
-    error: "Durée invalide.",
-  }),
-  questionCount: z.coerce.number().int().min(10, { error: "10 questions minimum." }).max(30, { error: "30 questions maximum." }),
+  durationMinutes: DurationSchema,
+  questionCount: QuestionCountSchema,
   questionTypes: z.array(z.enum(QUESTION_TYPES)).min(1, { error: "Cochez au moins un type de question." }),
   // ai : l'IA propose les compétences ; ai_full : compétences + questions ;
   // bank : questions de la banque KTZ (gratuit, sans IA) ; manual : sans IA.
   mode: z.enum(["ai", "ai_full", "bank", "manual"]),
-  // Compétences choisies parmi les suggestions (ou ajoutées à la main), 6 au plus.
-  suggestedSkills: z.array(z.string().trim().min(2).max(80)).max(6, { error: "6 compétences maximum." }),
+  // Compétences choisies parmi les suggestions (ou ajoutées à la main), sans limite pratique.
+  suggestedSkills: z.array(z.string().trim().min(2).max(80)).max(MAX_SKILLS, { error: `${MAX_SKILLS} compétences maximum.` }),
 });
 
 export async function createTest(_state: FormState, formData: FormData): Promise<FormState> {
@@ -161,8 +176,11 @@ export async function createTest(_state: FormState, formData: FormData): Promise
 
 // Remplit le test depuis la banque KTZ, puis ouvre la relecture des questions avec un message.
 async function redirectAfterBank(testId: string, companyId: string, aiUnavailable: boolean): Promise<never> {
+  const before = await db.test.findUnique({ where: { id: testId }, select: { questionCount: true } });
   const r = await fillFromBank(testId, companyId);
   const params = new URLSearchParams({ banque: String(r.added) });
+  // La banque n'avait pas assez de questions : le nombre demandé a été réduit.
+  if (before && r.questionCount < before.questionCount) params.set("demandees", String(before.questionCount));
   if (r.uncovered.length) params.set("sans", r.uncovered.join("|"));
   if (r.removed.length) params.set("retirees", r.removed.join("|"));
   if (r.extra.length) params.set("ajoutees", r.extra.join("|"));
@@ -181,7 +199,7 @@ export async function saveSkills(testId: string, _state: FormState, formData: Fo
   const rows = names
     .map((name, i) => ({ id: ids[i], name, weight: weights[i] }))
     .filter((r) => r.name.length > 0);
-  if (rows.length > 6) return { message: "6 compétences maximum." };
+  if (rows.length > MAX_SKILLS) return { message: `${MAX_SKILLS} compétences maximum (chacune pèse au moins 1 %).` };
   const weightError = checkWeights(rows.map((r) => r.weight));
   if (weightError) return { message: weightError };
 
@@ -276,7 +294,11 @@ export async function addQuestion(testId: string, formData: FormData) {
   const skillId = String(formData.get("skillId") ?? "");
   const type = String(formData.get("type") ?? "") as QuestionType;
   const skill = test.skills.find((s) => s.id === skillId);
-  if (!skill || !test.questionTypes.includes(type)) return;
+  // Le recruteur peut ajouter à la main n'importe quel type, même non coché à la création.
+  if (!skill || !(QUESTION_TYPES as readonly string[]).includes(type)) return;
+  if (!test.questionTypes.includes(type)) {
+    await db.test.update({ where: { id: testId }, data: { questionTypes: { push: type } } });
+  }
   await db.question.create({
     data: {
       ...toDb(blankQuestion(type, test.level)),
@@ -341,6 +363,9 @@ export async function regenerateQuestionAction(testId: string, questionId: strin
   const { user, test } = await editableTest(testId);
   const found = findQuestion(test, questionId);
   if (!found) return { message: "Question introuvable." };
+  if (!isAiType(found.question.type as QuestionType)) {
+    return { message: "L'IA ne rédige pas ce type de question : modifiez-la à la main." };
+  }
   try {
     const avoid = test.skills.flatMap((s) => s.questions.map((q) => q.prompt));
     const q = await regenerateQuestion(
@@ -362,6 +387,18 @@ export async function generateMissingQuestions(testId: string): Promise<FormStat
   return generateAllQuestions(testId);
 }
 
+// Complète les questions d'un test (créé depuis la bibliothèque) jusqu'au nombre voulu, réserve
+// comprise : avec l'IA (questions nouvelles, au niveau du test) ou gratuitement avec la banque KTZ.
+// Si l'IA en ligne échoue (crédit épuisé, panne…), on se rabat sur la banque. Redirige toujours.
+export async function completeTestQuestions(testId: string, mode: "ai" | "bank"): Promise<never> {
+  const { user } = await editableTest(testId);
+  if (mode === "ai") {
+    await generateAllQuestions(testId); // redirige vers les questions si l'IA a répondu
+    return redirectAfterBank(testId, user.companyId, true);
+  }
+  return redirectAfterBank(testId, user.companyId, false);
+}
+
 // ───── Paramètres et publication ─────
 
 const SettingsSchema = z.object({
@@ -369,6 +406,8 @@ const SettingsSchema = z.object({
   passThreshold: z.coerce.number().int().min(0).max(100),
   webcamIntervalSec: z.coerce.number().int().min(30).max(60),
   deadline: z.string().trim(),
+  durationMinutes: DurationSchema,
+  questionCount: QuestionCountSchema,
 });
 
 export async function saveSettings(testId: string, _state: FormState, formData: FormData): Promise<FormState> {
@@ -378,6 +417,8 @@ export async function saveSettings(testId: string, _state: FormState, formData: 
     passThreshold: formData.get("passThreshold"),
     webcamIntervalSec: formData.get("webcamIntervalSec") ?? 45,
     deadline: formData.get("deadline") ?? "",
+    durationMinutes: formData.get("durationMinutes"),
+    questionCount: formData.get("questionCount"),
   });
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
   const on = (k: string) => formData.get(k) === "on";
@@ -390,6 +431,8 @@ export async function saveSettings(testId: string, _state: FormState, formData: 
       title: parsed.data.title,
       passThreshold: parsed.data.passThreshold,
       webcamIntervalSec: parsed.data.webcamIntervalSec,
+      durationMinutes: parsed.data.durationMinutes,
+      questionCount: parsed.data.questionCount,
       deadline,
       shuffleQuestions: on("shuffleQuestions"),
       shuffleChoices: on("shuffleChoices"),
@@ -499,4 +542,44 @@ export async function setEvenWeights(testId: string) {
   const weights = evenWeights(test.skills.length);
   await db.$transaction(test.skills.map((s, i) => db.skill.update({ where: { id: s.id }, data: { weight: weights[i] } })));
   refresh();
+}
+
+// ───── Modules prêts à l'emploi (culture générale, raisonnement, programmation…) ─────
+
+// Ajoute à un test les compétences et questions d'un module de la bibliothèque. Les questions
+// du module s'ajoutent au nombre de questions posées et à la durée du test ; les poids des
+// compétences sont répartis également (modifiables ensuite).
+export async function addModule(testId: string, templateId: string) {
+  const { user, test } = await editableTest(testId);
+  const template = await db.template.findFirst({
+    where: { id: templateId, active: true, profession: { startsWith: "Module" } },
+    include: { skills: { orderBy: { position: "asc" }, include: { questions: { orderBy: { position: "asc" } } } } },
+  });
+  if (!template) redirect(`/tests/${testId}/competences`);
+
+  const existing = new Set(test.skills.map((s) => s.name));
+  const skills = template.skills.filter((s) => !existing.has(s.name));
+  if (skills.length === 0) redirect(`/tests/${testId}/competences?module=deja`);
+  const added = skills.flatMap((s) => s.questions);
+  const extraMinutes = Math.ceil(added.reduce((a, q) => a + q.suggestedTimeSec, 0) / 60);
+  const questionCount = Math.min(MAX_QUESTIONS, test.questionCount + added.length);
+  const types = [...new Set([...test.questionTypes, ...added.map((q) => q.type)])];
+
+  await db.$transaction(async (tx) => {
+    await copySkills(
+      tx,
+      testId,
+      skills.map((s, i) => ({ ...s, position: test.skills.length + i })),
+    );
+    const all = await tx.skill.findMany({ where: { testId }, orderBy: { position: "asc" }, select: { id: true } });
+    const weights = evenWeights(all.length);
+    for (const [i, s] of all.entries()) await tx.skill.update({ where: { id: s.id }, data: { weight: weights[i] } });
+    await tx.test.update({
+      where: { id: testId },
+      data: { questionCount, durationMinutes: Math.min(MAX_DURATION, test.durationMinutes + extraMinutes), questionTypes: types },
+    });
+  });
+  await splitReserve(testId, user.companyId, questionCount);
+  const params = new URLSearchParams({ module: template.title, ajout: String(added.length), minutes: String(extraMinutes) });
+  redirect(`/tests/${testId}/competences?${params}`);
 }

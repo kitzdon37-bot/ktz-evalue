@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { ActionButton, FormMessage } from "@/components/form";
 import { btn, input, label } from "@/components/ui";
 import {
+  isAiType,
   isMcq,
   LEVEL_LABELS,
   LEVELS,
@@ -11,14 +12,19 @@ import {
   RUBRIC_GRADED,
   type QuestionData,
 } from "@/lib/tests/model";
-import { MAX_CHOICES, MAX_CRITERIA } from "@/lib/tests/question-form";
+import { MAX_CHOICES, MAX_CODE_TESTS, MAX_CRITERIA, MAX_ORDER_ITEMS } from "@/lib/tests/question-form";
 import { deleteQuestion, moveQuestion, regenerateQuestionAction, updateQuestion } from "../../actions";
+import { ImageField } from "./image-field";
 
 export type EditorQuestion = QuestionData & { id: string; isReserve: boolean; origin: string; problems: string[] };
 
 function contentKey(q: EditorQuestion) {
-  return JSON.stringify([q.prompt, q.choices, q.correctAnswer, q.rubric, q.explanation, q.points, q.suggestedTimeSec, q.difficulty, q.isReserve]);
+  return JSON.stringify([q.prompt, q.image, q.choices, q.correctAnswer, q.rubric, q.explanation, q.points, q.suggestedTimeSec, q.difficulty, q.isReserve]);
 }
+
+// Affichage d'une valeur de test de code dans le formulaire (JSON lisible).
+const show = (v: unknown) => (v === undefined ? "" : JSON.stringify(v));
+const showArgs = (args: unknown[]) => args.map((a) => JSON.stringify(a)).join(", ");
 
 function pad<T>(list: T[], n: number, make: () => T): T[] {
   return [...list, ...Array.from({ length: Math.max(0, n - list.length) }, make)];
@@ -90,6 +96,8 @@ export function QuestionEditor({
             </label>
             <textarea id={`${name}-prompt`} name="prompt" rows={3} defaultValue={q.prompt} className={`${input} mt-1`} />
           </div>
+
+          <ImageField name={name} initial={q.image} />
 
           {mcq && (
             <fieldset>
@@ -180,6 +188,101 @@ export function QuestionEditor({
                 />
               </div>
             </div>
+          )}
+
+          {q.type === "ORDERING" && (
+            <fieldset>
+              <legend className={label}>Éléments, dans le BON ordre</legend>
+              <p className="mt-0.5 text-xs text-stone-500">
+                Ils seront mélangés pour chaque candidat, qui devra les remettre dans cet ordre (glisser-déposer ou flèches).
+              </p>
+              <div className="mt-2 space-y-2">
+                {pad(q.choices ?? [], Math.min(MAX_ORDER_ITEMS, Math.max(4, (q.choices?.length ?? 0) + 1)), () => ({ id: "", text: "" })).map(
+                  (c, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-50 text-sm font-bold text-brand-800">
+                        {i + 1}
+                      </span>
+                      <input name={`item_${i}`} defaultValue={c.text} placeholder={`Élément n° ${i + 1}`} className={input} />
+                    </div>
+                  ),
+                )}
+              </div>
+              <p className="mt-1 text-xs text-stone-500">Laissez un champ vide pour le retirer ; enregistrez pour ajouter une ligne.</p>
+            </fieldset>
+          )}
+
+          {q.type === "CODE" && (
+            <fieldset className="space-y-3">
+              <legend className={label}>Exercice de programmation (JavaScript)</legend>
+              <div className="grid gap-3 sm:grid-cols-[14rem_1fr]">
+                <div>
+                  <label htmlFor={`${name}-fn`} className="text-xs font-semibold text-stone-600">
+                    Nom de la fonction à écrire
+                  </label>
+                  <input
+                    id={`${name}-fn`}
+                    name="functionName"
+                    defaultValue={q.correctAnswer?.code?.functionName ?? "solution"}
+                    className={`${input} mt-1 font-mono`}
+                    spellCheck={false}
+                  />
+                </div>
+                <p className="self-end text-xs text-stone-500">
+                  Le candidat complète cette fonction. Son code est exécuté dans un bac à sable et vérifié avec les tests ci-dessous.
+                </p>
+              </div>
+              <div>
+                <label htmlFor={`${name}-starter`} className="text-xs font-semibold text-stone-600">
+                  Code de départ montré au candidat
+                </label>
+                <textarea
+                  id={`${name}-starter`}
+                  name="starter"
+                  rows={6}
+                  spellCheck={false}
+                  defaultValue={q.correctAnswer?.code?.starter ?? ""}
+                  className={`${input} mt-1 bg-stone-900 font-mono text-sm text-stone-100`}
+                />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-stone-600">Tests : arguments → résultat attendu</p>
+                <p className="text-xs text-stone-500">
+                  Écrivez les valeurs comme en JavaScript : <code>2, 3</code> · <code>[1, 2, 3]</code> · <code>&quot;Bangui&quot;</code> ·{" "}
+                  <code>true</code>. Les tests « cachés » ne sont pas montrés au candidat.
+                </p>
+                <div className="mt-2 space-y-2">
+                  {pad(q.correctAnswer?.code?.tests ?? [], Math.min(MAX_CODE_TESTS, (q.correctAnswer?.code?.tests.length ?? 0) + 2), () => ({
+                    args: [] as unknown[],
+                    expected: undefined as unknown,
+                    hidden: false,
+                  })).map((t, i) => (
+                    <div key={i} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:grid-cols-[1fr_auto_1fr_auto]">
+                      <input
+                        name={`test_args_${i}`}
+                        defaultValue={showArgs(t.args)}
+                        placeholder="Arguments, ex. : [1, 2, 3]"
+                        aria-label={`Arguments du test ${i + 1}`}
+                        className={`${input} font-mono text-sm`}
+                        spellCheck={false}
+                      />
+                      <span className="text-stone-400">→</span>
+                      <input
+                        name={`test_expected_${i}`}
+                        defaultValue={show(t.expected)}
+                        placeholder="Résultat, ex. : 6"
+                        aria-label={`Résultat attendu du test ${i + 1}`}
+                        className={`${input} font-mono text-sm`}
+                        spellCheck={false}
+                      />
+                      <label className="col-span-3 flex items-center gap-1.5 text-xs text-stone-600 sm:col-span-1">
+                        <input type="checkbox" name={`test_hidden_${i}`} defaultChecked={t.hidden} className="h-4 w-4" /> Caché
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </fieldset>
           )}
 
           {open && (
@@ -295,7 +398,7 @@ export function QuestionEditor({
               ↓ Descendre
             </ActionButton>
           </form>
-          {aiAvailable && (
+          {aiAvailable && isAiType(q.type) && (
             <form action={regenerate}>
               <ActionButton className={btn.small} pendingText="Régénération…">
                 ↻ Régénérer avec l&apos;IA

@@ -5,7 +5,7 @@ import { Lightbulb, Plus } from "lucide-react";
 import { ActionButton, FormMessage } from "@/components/form";
 import { btn, Card, input } from "@/components/ui";
 import { SkillInput } from "@/components/skill-input";
-import { evenWeights } from "@/lib/tests/model";
+import { evenWeights, MAX_SKILLS } from "@/lib/tests/model";
 import { suggestSkills } from "@/lib/tests/suggestions";
 import { proposeSkills, saveSkills } from "../../actions";
 
@@ -46,7 +46,7 @@ export function SkillsForm({
   const proposals = useMemo(() => suggestSkills(jobTitle, rows.map((r) => r.name)).slice(0, 10), [jobTitle, rows]);
   const addSuggestion = (name: string) => {
     const filled = rows.filter((r) => r.name.trim());
-    if (filled.length >= 6) return;
+    if (filled.length >= MAX_SKILLS) return;
     const next = [...filled, { key: newKey(), id: "", name, weight: 0, questions: 0 }];
     const w = evenWeights(next.length);
     setRows(next.map((r, i) => ({ ...r, weight: w[i] })));
@@ -59,14 +59,14 @@ export function SkillsForm({
           <p className="flex items-center gap-2 text-sm font-bold text-stone-900">
             <Lightbulb className="h-4 w-4 text-brand-600" /> Suggestions pour ce poste
           </p>
-          <p className="mt-1 text-sm text-stone-600">Un clic ajoute la compétence et répartit les poids également (6 compétences au plus).</p>
+          <p className="mt-1 text-sm text-stone-600">Un clic ajoute la compétence et répartit les poids également. Ajoutez-en autant que nécessaire.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {proposals.map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => addSuggestion(s)}
-                disabled={rows.filter((r) => r.name.trim()).length >= 6}
+                disabled={rows.filter((r) => r.name.trim()).length >= MAX_SKILLS}
                 className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 transition hover:border-brand-300 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Plus className="h-3.5 w-3.5" /> {s}

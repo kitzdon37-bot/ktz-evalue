@@ -6,7 +6,17 @@ export type AnswerContent = {
   choiceIds?: string[];
   value?: boolean | string;
   text?: string;
+  /** Remettre dans l'ordre : identifiants dans l'ordre choisi par le candidat. */
+  order?: string[];
+  /** Exercice de code : code du candidat, puis résultat des tests après correction. */
+  code?: string;
+  tests?: { passed: boolean; hidden: boolean; got?: string; error?: string }[];
 };
+
+// Bon ordre d'une question « remettre dans l'ordre » (ordre de saisie des éléments par défaut).
+export function expectedOrder(q: QuestionData): string[] {
+  return q.correctAnswer?.order?.length ? q.correctAnswer.order : (q.choices ?? []).map((c) => c.id);
+}
 
 // Transforme « 2 380 000 », « 2380000,5 » ou « 25 % » en nombre.
 export function parseNumber(s: string): number | null {
@@ -56,6 +66,14 @@ export function gradeClosed(q: QuestionData, answer: AnswerContent | null): numb
       return Math.abs(e - g) <= tolerance + 1e-9 ? q.points : 0;
     }
     return normalizeText(expected) === normalizeText(given) ? q.points : 0;
+  }
+  if (q.type === "ORDERING") {
+    // Points proportionnels aux éléments placés au bon rang.
+    const expected = expectedOrder(q);
+    const given = answer?.order ?? [];
+    if (expected.length === 0 || given.length !== expected.length) return 0;
+    const hits = expected.filter((id, i) => given[i] === id).length;
+    return Math.round((hits / expected.length) * q.points * 100) / 100;
   }
   return null;
 }

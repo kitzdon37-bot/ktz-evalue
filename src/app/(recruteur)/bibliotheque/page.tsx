@@ -20,9 +20,12 @@ import { LEVEL_LABELS, QUESTION_TYPE_LABELS, TEST_STATUS_LABELS, type QuestionTy
 import { ActionButton } from "@/components/form";
 import { btn, Loading, PageTitle, StatusBadge } from "@/components/ui";
 import { duplicateTest } from "../tests/actions";
-import { createFromTemplate } from "./actions";
+import { isAiConfigured } from "@/lib/ai";
+import { UseTemplateForm } from "./use-template-form";
 
 export const metadata: Metadata = { title: "Bibliothèque de tests" };
+// La génération de questions par l'IA peut prendre 1 à 2 minutes.
+export const maxDuration = 300;
 
 // Icône et couleur de chaque métier.
 const PROFESSION_STYLES: Record<string, { icon: LucideIcon; tone: string }> = {
@@ -38,6 +41,7 @@ const PROFESSION_STYLES: Record<string, { icon: LucideIcon; tone: string }> = {
 async function Library() {
   const user = await requireCompany();
   const editable = canEdit(user);
+  const aiAvailable = isAiConfigured();
   const [templates, ownTests] = await Promise.all([
     db.template.findMany({
       where: { active: true },
@@ -61,7 +65,7 @@ async function Library() {
       <PageTitle
         eyebrow="Bibliothèque"
         title="Des tests prêts à l'emploi"
-        subtitle="Choisissez un modèle par métier, utilisez-le tel quel ou adaptez-le à votre poste."
+        subtitle="Choisissez un modèle par métier, réglez le niveau et le nombre de questions, puis complétez-le avec la banque KTZ ou l'IA."
       />
 
       <section className="mb-12">
@@ -112,11 +116,7 @@ async function Library() {
                   </ol>
                 </details>
                 {editable && (
-                  <form action={createFromTemplate.bind(null, t.id)} className="mt-auto pt-5">
-                    <ActionButton className={`${btn.primary} w-full`} pendingText="Création du test…">
-                      Utiliser ce modèle
-                    </ActionButton>
-                  </form>
+                  <UseTemplateForm templateId={t.id} defaultLevel={t.level} available={count} aiAvailable={aiAvailable} />
                 )}
               </article>
             );

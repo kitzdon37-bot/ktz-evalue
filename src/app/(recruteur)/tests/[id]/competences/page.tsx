@@ -7,6 +7,7 @@ import { isAiConfigured } from "@/lib/ai";
 import { BackLink, Notice, PageTitle , Loading } from "@/components/ui";
 import { TestSteps } from "../steps";
 import { SkillsForm } from "./skills-form";
+import { Modules } from "./modules";
 
 export const metadata: Metadata = { title: "Compétences du test" };
 // Génération des questions par IA : plusieurs appels en parallèle.
@@ -14,7 +15,7 @@ export const maxDuration = 300;
 
 async function Content({ params, searchParams }: PageProps<"/tests/[id]/competences">) {
   const { id } = await params;
-  const { ia } = await searchParams;
+  const { ia, module: moduleTitle, ajout, minutes } = await searchParams;
   const user = await requireEditor();
   const test = await getCompanyTest(id, user.companyId);
   if (test.status !== "DRAFT") redirect(`/tests/${id}`);
@@ -33,6 +34,19 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/competen
           </Notice>
         </div>
       )}
+      {moduleTitle && (
+        <div className="mb-4">
+          {moduleTitle === "deja" ? (
+            <Notice tone="info">Ce module est déjà dans le test.</Notice>
+          ) : (
+            <Notice tone="success">
+              Module « {String(moduleTitle)} » ajouté : <strong>{String(ajout)} questions</strong> en plus et{" "}
+              <strong>{String(minutes)} minutes</strong> de plus pour le test. Les poids des compétences ont été répartis également :
+              ajustez-les si besoin, puis passez aux questions.
+            </Notice>
+          )}
+        </div>
+      )}
       <SkillsForm
         key={test.skills.map((s) => `${s.id}:${s.weight}:${s.name}`).join("|")}
         testId={id}
@@ -41,6 +55,7 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/competen
         jobTitle={test.jobTitle}
         skills={test.skills.map((s) => ({ id: s.id, name: s.name, weight: s.weight, questions: s.questions.length }))}
       />
+      <Modules testId={id} skillNames={test.skills.map((s) => s.name)} />
     </>
   );
 }

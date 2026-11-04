@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { requireCompany } from "@/lib/tenant";
 import { getCompanyTest, fromDb } from "@/lib/tests/repository";
-import { donePage, messagePage, previewBanner, questionPage, welcomePage } from "@/lib/candidate/views";
+import { donePage, messagePage, previewBanner, questionPage, testPhoto, welcomePage } from "@/lib/candidate/views";
 
 const HEADERS = { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Robots-Tag": "noindex" };
 
@@ -33,6 +33,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/tests/[id]/aperc
   if (step === 0) {
     html = welcomePage({
       token: "apercu",
+      photo: testPhoto(test.jobTitle, test.id),
       companyName: company.name,
       color: company.primaryColor,
       logoUrl: company.logoUrl,
@@ -59,7 +60,8 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/tests/[id]/aperc
       index: step,
       total: questions.length,
       question: { ...data, id: q.id },
-      choiceOrder: data.choices?.map((c) => c.id) ?? null,
+      // « Remettre dans l'ordre » : éléments montrés à l'envers, comme mélangés pour un candidat.
+      choiceOrder: data.choices ? (data.type === "ORDERING" ? data.choices.map((c) => c.id).reverse() : data.choices.map((c) => c.id)) : null,
       questionRemainingSec: data.suggestedTimeSec,
       questionTotalSec: data.suggestedTimeSec,
       totalRemainingSec: Math.max(60, test.durationMinutes * 60 - elapsed),

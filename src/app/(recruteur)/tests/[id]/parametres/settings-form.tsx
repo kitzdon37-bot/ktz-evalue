@@ -3,11 +3,14 @@
 import { useActionState } from "react";
 import { ActionButton, FormMessage } from "@/components/form";
 import { btn, Card, input, label } from "@/components/ui";
+import { MAX_DURATION, MAX_QUESTIONS, MIN_DURATION, MIN_QUESTIONS } from "@/lib/tests/model";
 import { saveSettings } from "../../actions";
 
 type Values = {
   title: string;
   passThreshold: number;
+  durationMinutes: number;
+  questionCount: number;
   deadline: string;
   shuffleQuestions: boolean;
   shuffleChoices: boolean;
@@ -73,6 +76,44 @@ export function SettingsForm({ testId, values: v }: { testId: string; values: Va
             </label>
             <input id="deadline" name="deadline" type="date" defaultValue={v.deadline} className={`${input} mt-1`} />
             {errors?.deadline?.map((e) => (
+              <p key={e} className="mt-1 text-sm text-red-700">
+                {e}
+              </p>
+            ))}
+          </div>
+          <div>
+            <label htmlFor="questionCount" className={label}>
+              Questions posées à chaque candidat
+            </label>
+            <input
+              id="questionCount"
+              name="questionCount"
+              type="number"
+              min={MIN_QUESTIONS}
+              max={MAX_QUESTIONS}
+              defaultValue={v.questionCount}
+              className={`${input} mt-1`}
+            />
+            {errors?.questionCount?.map((e) => (
+              <p key={e} className="mt-1 text-sm text-red-700">
+                {e}
+              </p>
+            ))}
+          </div>
+          <div>
+            <label htmlFor="durationMinutes" className={label}>
+              Durée totale (minutes)
+            </label>
+            <input
+              id="durationMinutes"
+              name="durationMinutes"
+              type="number"
+              min={MIN_DURATION}
+              max={MAX_DURATION}
+              defaultValue={v.durationMinutes}
+              className={`${input} mt-1`}
+            />
+            {errors?.durationMinutes?.map((e) => (
               <p key={e} className="mt-1 text-sm text-red-700">
                 {e}
               </p>
