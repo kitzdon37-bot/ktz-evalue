@@ -372,6 +372,48 @@ export async function moveQuestion(testId: string, questionId: string, direction
   refresh();
 }
 
+// Fait rédiger par l'IA de nouvelles questions pour une compétence (bouton « Générer avec l'IA »
+// sous chaque compétence). Type au choix, ou types variés parmi ceux du test.
+// Les questions s'ajoutent d'abord aux questions posées, puis à la réserve une fois le nombre prévu atteint.
+export async function generateSkillQuestions(testId: string, skillId: string, _state: FormState, formData: FormData): Promise<FormState> {
+  const { user, test } = await editableTest(testId);
+  const index = test.skills.findIndex((s) => s.id === skillId);
+  const skill = test.skills[index];
+  if (!skill) return { message: "Compétence introuvable." };
+  const count = Math.min(10, Math.max(1, Number.parseInt(String(formData.get("count") ?? "3"), 10) || 3));
+  const wanted = String(formData.get("type") ?? "");
+  const ctx = await contextFor(test, user.companyId);
+  if (isAiType(wanted as QuestionType)) ctx.questionTypes = [wanted as QuestionType];
+
+  let questions;
+  try {
+    const avoid = test.skills.flatMap((s) => s.questions.map((q) => q.prompt));
+    ({ questions } = await generateQuestionsForSkill(ctx, skill.name, count, avoid));
+  } catch (e) {
+    return { message: aiErrorMessage(e) };
+  }
+  if (questions.length === 0) return { message: "L'IA n'a pas proposé de question valable. Réessayez." };
+
+  const plan = questionPlan(test.skills.map((s) => s.weight), test.questionCount);
+  const mainHave = skill.questions.filter((q) => !q.isReserve).length;
+  const start = skill.questions.length;
+  await db.question.createMany({
+    data: questions.map((q, k) => ({
+      ...toDb(q),
+      skillId,
+      origin: "AI" as const,
+      position: start + k,
+      isReserve: mainHave + k >= plan[index].main,
+    })),
+  });
+  // Un type nouveau pour ce test (ex. mise en situation) est ajouté à la liste des types du test.
+  const newTypes = [...new Set(questions.map((q) => q.type))].filter((t) => !test.questionTypes.includes(t));
+  if (newTypes.length) await db.test.update({ where: { id: testId }, data: { questionTypes: { push: newTypes } } });
+  refresh();
+  const n = questions.length;
+  return { success: `${n} question${n > 1 ? "s" : ""} rédigée${n > 1 ? "s" : ""} par l'IA, ajoutée${n > 1 ? "s" : ""} à « ${skill.name} ». Relisez-la${n > 1 ? "s" : ""} avant de publier.` };
+}
+
 export async function regenerateQuestionAction(testId: string, questionId: string): Promise<FormState> {
   const { user, test } = await editableTest(testId);
   const found = findQuestion(test, questionId);

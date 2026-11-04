@@ -12,6 +12,7 @@ import { addQuestion } from "../../actions";
 import { TestSteps } from "../steps";
 import { QuestionEditor } from "./question-editor";
 import { GenerateMissing } from "./generate-missing";
+import { GenerateForSkill } from "./generate-for-skill";
 
 export const metadata: Metadata = { title: "Questions du test" };
 export const maxDuration = 300;
@@ -139,6 +140,7 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]/question
               </select>
               <ActionButton className={btn.secondary}>+ Ajouter une question</ActionButton>
             </form>
+            {aiAvailable && <GenerateForSkill testId={id} skillId={skill.id} skillName={skill.name} />}
           </section>
         ))}
       </div>
