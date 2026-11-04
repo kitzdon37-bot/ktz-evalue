@@ -520,14 +520,36 @@ function publicationProblems(test: CompanyTest): string[] {
   return problems;
 }
 
+// Durée nécessaire (en minutes, arrondie aux 5 min) pour les questions posées à chaque candidat :
+// on additionne les temps conseillés des questions les plus longues, comme le contrôle de publication.
+function neededMinutes(test: CompanyTest): number {
+  const times = test.skills
+    .flatMap((s) => s.questions.map((q) => q.suggestedTimeSec))
+    .sort((a, b) => b - a)
+    .slice(0, test.questionCount);
+  const total = times.reduce((a, b) => a + b, 0);
+  return Math.min(MAX_DURATION, Math.ceil(total / 60 / 5) * 5);
+}
+
 async function publishTest(testId: string): Promise<FormState> {
-  const { test } = await editableTest(testId);
-  const problems = publicationProblems(test);
+  const { user } = await editableTest(testId);
+  // Les questions ajoutées mais jamais remplies (énoncé vide) sont retirées avant publication.
+  const { count: removed } = await db.question.deleteMany({ where: { skill: { testId }, prompt: "" } });
+  const test = await getCompanyTest(testId, user.companyId);
+  // Durée trop courte pour le temps conseillé des questions : elle est allongée automatiquement.
+  const needed = neededMinutes(test);
+  const duration = Math.max(test.durationMinutes, needed);
+  const problems = publicationProblems({ ...test, durationMinutes: duration });
   if (problems.length) {
-    return { message: `Le test ne peut pas encore être publié :\n• ${problems.slice(0, 8).join("\n• ")}` };
+    if (removed) refresh();
+    const note = removed ? `\n(${removed} question(s) vide(s) ont été retirées.)` : "";
+    return { message: `Le test ne peut pas encore être publié :\n• ${problems.slice(0, 8).join("\n• ")}${note}` };
   }
-  await db.test.update({ where: { id: testId }, data: { status: "PUBLISHED", publishedAt: new Date() } });
-  redirect(`/tests/${testId}?publie=1`);
+  await db.test.update({ where: { id: testId }, data: { status: "PUBLISHED", publishedAt: new Date(), durationMinutes: duration } });
+  const params = new URLSearchParams({ publie: "1" });
+  if (duration !== test.durationMinutes) params.set("duree", `${test.durationMinutes}-${duration}`);
+  if (removed) params.set("vides", String(removed));
+  redirect(`/tests/${testId}?${params}`);
 }
 
 // ───── Cycle de vie ─────

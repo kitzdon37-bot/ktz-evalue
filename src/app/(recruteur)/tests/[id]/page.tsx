@@ -29,7 +29,7 @@ export const metadata: Metadata = { title: "Test" };
 
 async function Content({ params, searchParams }: PageProps<"/tests/[id]">) {
   const { id } = await params;
-  const { publie } = await searchParams;
+  const { publie, duree, vides } = await searchParams;
   const user = await requireCompany();
   const test = await getCompanyTest(id, user.companyId);
   const editable = canEdit(user);
@@ -102,6 +102,13 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]">) {
               inviter des candidats
             </Link>
             .
+            {duree && (
+              <>
+                {" "}La durée a été allongée de <strong>{String(duree).split("-")[0]} à {String(duree).split("-")[1]} minutes</strong>, pour laisser le
+                temps de répondre à toutes les questions.
+              </>
+            )}
+            {vides && <> {String(vides)} question(s) vide(s), jamais remplie(s), ont été retirées.</>}
           </Notice>
         </div>
       )}
