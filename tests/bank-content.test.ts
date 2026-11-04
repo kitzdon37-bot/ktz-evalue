@@ -12,6 +12,7 @@ import { TEMPLATES_2 } from "../prisma/seed/templates-2.mjs";
 import { TEMPLATES_3 } from "../prisma/seed/templates-3.mjs";
 import { TEMPLATES_4 } from "../prisma/seed/templates-4.mjs";
 import { MODULES } from "../prisma/seed/modules.mjs";
+import { MODULES_2 } from "../prisma/seed/modules-2.mjs";
 
 // Contrôle de toute la banque de questions KTZ : chaque question doit passer les contrôles de
 // qualité, chaque illustration exister, chaque réponse courte être reconnue, et chaque exercice
@@ -33,7 +34,7 @@ type SeedQuestion = {
 };
 type SeedTemplate = { title: string; level: QuestionData["difficulty"]; skills: { name: string; weight: number; questions: SeedQuestion[] }[] };
 
-const ALL = [...TEMPLATES, ...TEMPLATES_2, ...TEMPLATES_3, ...TEMPLATES_4, ...MODULES] as unknown as SeedTemplate[];
+const ALL = [...TEMPLATES, ...TEMPLATES_2, ...TEMPLATES_3, ...TEMPLATES_4, ...MODULES, ...MODULES_2] as unknown as SeedTemplate[];
 const letter = (i: number) => String.fromCharCode(97 + i);
 
 function toData(q: SeedQuestion, level: QuestionData["difficulty"]): QuestionData {

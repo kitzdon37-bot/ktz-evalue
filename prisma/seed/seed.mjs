@@ -8,8 +8,9 @@ import { TEMPLATES_2 } from "./templates-2.mjs";
 import { TEMPLATES_3 } from "./templates-3.mjs";
 import { TEMPLATES_4 } from "./templates-4.mjs";
 import { MODULES } from "./modules.mjs";
+import { MODULES_2 } from "./modules-2.mjs";
 
-const TEMPLATES = [...BASE_TEMPLATES, ...TEMPLATES_2, ...TEMPLATES_3, ...TEMPLATES_4, ...MODULES];
+const TEMPLATES = [...BASE_TEMPLATES, ...TEMPLATES_2, ...TEMPLATES_3, ...TEMPLATES_4, ...MODULES, ...MODULES_2];
 
 config({ path: ".env.local", quiet: true });
 

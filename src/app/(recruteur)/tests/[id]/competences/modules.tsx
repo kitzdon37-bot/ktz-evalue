@@ -1,4 +1,4 @@
-import { Brain, Check, Code2, Globe2, Puzzle, type LucideIcon } from "lucide-react";
+import { Brain, Check, Code2, Globe2, Languages, Monitor, PenLine, Puzzle, type LucideIcon } from "lucide-react";
 import { db } from "@/lib/db";
 import { ActionButton } from "@/components/form";
 import { btn } from "@/components/ui";
@@ -9,6 +9,9 @@ function moduleIcon(profession: string): { icon: LucideIcon; tone: string } {
   if (/culture/i.test(profession)) return { icon: Globe2, tone: "from-sky-500 to-sky-700" };
   if (/raisonnement/i.test(profession)) return { icon: Brain, tone: "from-violet-500 to-violet-700" };
   if (/programmation/i.test(profession)) return { icon: Code2, tone: "from-stone-700 to-stone-900" };
+  if (/fran[çc]ais/i.test(profession)) return { icon: PenLine, tone: "from-rose-500 to-rose-700" };
+  if (/bureautique|num[ée]rique/i.test(profession)) return { icon: Monitor, tone: "from-emerald-500 to-emerald-700" };
+  if (/anglais/i.test(profession)) return { icon: Languages, tone: "from-sun-400 to-sun-600" };
   return { icon: Puzzle, tone: "from-brand-500 to-brand-700" };
 }
 

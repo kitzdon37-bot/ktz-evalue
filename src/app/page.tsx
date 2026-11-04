@@ -237,8 +237,8 @@ export default function HomePage() {
         <div className="mx-auto mt-10 grid max-w-5xl grid-cols-2 gap-6 px-4 md:grid-cols-4">
           {[
             { v: JOBS.length, s: "", l: "métiers couverts" },
-            { v: 400, s: "+", l: "questions vérifiées" },
-            { v: 3, s: "", l: "modules : culture, logique, code" },
+            { v: 450, s: "+", l: "questions vérifiées" },
+            { v: 6, s: "", l: "modules : culture, logique, code, français, anglais, bureautique" },
             { v: 0, s: "", l: "compte à créer pour le candidat" },
           ].map((x, i) => (
             <div key={x.l} data-reveal style={{ "--i": i } as React.CSSProperties} className="text-center">
