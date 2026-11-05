@@ -607,11 +607,32 @@ export async function archiveTest(testId: string) {
   redirect("/tests");
 }
 
-export async function deleteDraft(testId: string) {
+// Suppression définitive d'un test, quel que soit son état. Avec le test disparaissent ses
+// compétences et questions, ses invitations, les passages des candidats, leurs réponses,
+// signaux, photos et badges. Les fiches des candidats restent (ils peuvent avoir passé d'autres tests).
+// Si des candidats ont été invités, il faut taper « SUPPRIMER » pour confirmer.
+export async function deleteTest(testId: string, _state: FormState, formData: FormData): Promise<FormState> {
   const user = await requireEditor();
-  // Seuls les brouillons (sans candidat) peuvent être supprimés.
-  await db.test.deleteMany({ where: { id: testId, companyId: user.companyId, status: "DRAFT" } });
-  redirect("/tests");
+  const test = await db.test.findFirst({
+    where: { id: testId, companyId: user.companyId },
+    select: { id: true, _count: { select: { invitations: true, attempts: true } } },
+  });
+  if (!test) redirect("/tests");
+  const hasCandidates = test._count.invitations + test._count.attempts > 0;
+  if (hasCandidates && String(formData.get("confirm") ?? "").trim().toUpperCase() !== "SUPPRIMER") {
+    return { message: "Tapez SUPPRIMER (en majuscules) pour confirmer la suppression définitive." };
+  }
+  await db.$transaction([
+    db.badge.deleteMany({ where: { testId } }),
+    db.answer.deleteMany({ where: { attempt: { testId } } }),
+    db.integrityEvent.deleteMany({ where: { attempt: { testId } } }),
+    db.webcamPhoto.deleteMany({ where: { attempt: { testId } } }),
+    db.attempt.deleteMany({ where: { testId } }),
+    db.invitation.deleteMany({ where: { testId } }),
+    // Les compétences et questions du test sont supprimées en cascade.
+    db.test.deleteMany({ where: { id: testId, companyId: user.companyId } }),
+  ]);
+  redirect("/tests?supprime=1");
 }
 
 export async function setEvenWeights(testId: string) {

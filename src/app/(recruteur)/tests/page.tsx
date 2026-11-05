@@ -5,11 +5,12 @@ import { ArrowRight, Clock, HelpCircle, Plus, Sparkles, Users } from "lucide-rea
 import { db } from "@/lib/db";
 import { canEdit, requireCompany } from "@/lib/tenant";
 import { LEVEL_LABELS, TEST_STATUS_LABELS } from "@/lib/tests/model";
-import { btn, EmptyState, Loading, PageTitle, StatusBadge } from "@/components/ui";
+import { btn, EmptyState, Loading, Notice, PageTitle, StatusBadge } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Tests" };
 
-async function TestList() {
+async function TestList({ searchParams }: { searchParams: PageProps<"/tests">["searchParams"] }) {
+  const { supprime } = await searchParams;
   const user = await requireCompany();
   const tests = await db.test.findMany({
     where: { companyId: user.companyId, status: { not: "ARCHIVED" } },
@@ -42,6 +43,11 @@ async function TestList() {
           )
         }
       />
+      {supprime && (
+        <div className="mb-6">
+          <Notice tone="success">Le test a été supprimé définitivement.</Notice>
+        </div>
+      )}
       {tests.length === 0 ? (
         <EmptyState
           icon={Sparkles}
@@ -110,10 +116,10 @@ async function TestList() {
   );
 }
 
-export default function TestsPage() {
+export default function TestsPage(props: PageProps<"/tests">) {
   return (
     <Suspense fallback={<Loading />}>
-      <TestList />
+      <TestList searchParams={props.searchParams} />
     </Suspense>
   );
 }

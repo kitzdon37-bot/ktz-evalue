@@ -14,7 +14,6 @@ import {
   PenLine,
   Send,
   Target,
-  Trash2,
   Users,
 } from "lucide-react";
 import { db } from "@/lib/db";
@@ -23,7 +22,8 @@ import { getCompanyTest } from "@/lib/tests/repository";
 import { LANGUAGE_LABELS, LEVEL_LABELS, TEST_STATUS_LABELS } from "@/lib/tests/model";
 import { ActionButton } from "@/components/form";
 import { BackLink, btn, Card, CardTitle, Loading, Notice, StatusBadge } from "@/components/ui";
-import { archiveTest, closeTest, deleteDraft, duplicateTest } from "../actions";
+import { archiveTest, closeTest, duplicateTest } from "../actions";
+import { DeleteTest } from "./delete-test";
 
 export const metadata: Metadata = { title: "Test" };
 
@@ -187,13 +187,7 @@ async function Content({ params, searchParams }: PageProps<"/tests/[id]">) {
                 </ActionButton>
               </form>
             )}
-            {editable && test.status === "DRAFT" && (
-              <form action={deleteDraft.bind(null, id)}>
-                <ActionButton className={`${btn.danger} w-full`}>
-                  <Trash2 className="h-4 w-4" /> Supprimer le brouillon
-                </ActionButton>
-              </form>
-            )}
+            {editable && <DeleteTest testId={id} candidates={invited} isDraft={test.status === "DRAFT"} />}
           </div>
         </Card>
       </div>
