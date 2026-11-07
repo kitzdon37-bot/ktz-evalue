@@ -39,7 +39,9 @@ export async function sendEmail(email: Email): Promise<void> {
 }
 
 export function appUrl(path: string): string {
-  const base = process.env.APP_URL ?? "http://localhost:3000";
+  // Sur Vercel sans APP_URL : adresse principale du projet (ex. ktz-evalue.vercel.app).
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  const base = process.env.APP_URL ?? (vercel ? `https://${vercel}` : "http://localhost:3000");
   return new URL(path, base).toString();
 }
 

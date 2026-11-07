@@ -38,7 +38,7 @@ function toRow(q) {
   return base;
 }
 
-const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+const client = new pg.Client({ connectionString: process.env.DIRECT_URL ?? process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL });
 await client.connect();
 let created = 0;
 try {

@@ -16,7 +16,11 @@ export async function createSession(userId: string, method: LoginMethod = "passw
   const token = generateToken();
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
   const info = requestInfo(await headers());
-  const user = await db.user.findUnique({ where: { id: userId }, select: { email: true } });
+  const user = await db.user.findUnique({ where: { id: userId }, select: { email: true, isPlatformAdmin: true } });
+  // Administrateurs désignés par l'hébergeur (variable ADMIN_EMAILS, adresses séparées par des virgules).
+  if (user && !user.isPlatformAdmin && isConfiguredAdmin(user.email)) {
+    await db.user.update({ where: { id: userId }, data: { isPlatformAdmin: true } });
+  }
   await db.$transaction([
     db.session.create({ data: { id: hashToken(token), userId, expiresAt, method, ...info } }),
     db.loginEvent.create({ data: { userId, email: user?.email ?? "", method, success: true, ...info } }),
@@ -41,6 +45,11 @@ export async function recordLoginFailure(email: string, method: LoginMethod, rea
 }
 
 const SEEN_EVERY_MS = 2 * 60 * 1000;
+
+export function isConfiguredAdmin(email: string): boolean {
+  const list = (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+  return list.includes(email.trim().toLowerCase());
+}
 
 export async function deleteSession() {
   const cookieStore = await cookies();
