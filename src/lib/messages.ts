@@ -2,6 +2,7 @@ import "server-only";
 import { db } from "@/lib/db";
 import { appUrl, linkEmail, sendEmail } from "@/lib/email";
 import { sendWhatsApp } from "@/lib/whatsapp";
+import { candidateThanks, employerResults } from "@/lib/reports/result-email";
 
 type Kind = "invitation" | "relance";
 
@@ -113,35 +114,88 @@ export async function recordManualShare(invitationId: string, companyId: string,
   if (inv.status === "PENDING") await db.invitation.update({ where: { id: inv.id }, data: { status: "SENT" } });
 }
 
-// Prévient le recruteur qu'un candidat a terminé son test.
-export async function notifyRecruiterOfCompletion(attemptId: string) {
-  const attempt = await db.attempt.findUnique({
-    where: { id: attemptId },
-    include: {
-      candidate: { select: { name: true } },
-      test: { select: { id: true, title: true, companyId: true, createdBy: { select: { email: true } } } },
-    },
-  });
-  if (!attempt) return;
-  const to = attempt.test.createdBy.email;
-  const message = await db.message.create({
-    data: { companyId: attempt.test.companyId, channel: "EMAIL", recipient: to, template: "candidat_termine" },
-  });
+// Envoie un message et garde sa trace (table Message), sans jamais faire échouer la suite.
+async function tracked(
+  data: { companyId: string; invitationId?: string; channel: "EMAIL" | "WHATSAPP"; recipient: string; template: string },
+  send: () => Promise<string | null | void>,
+) {
+  const message = await db.message.create({ data });
   try {
-    await sendEmail(
-      linkEmail({
-        to,
-        subject: `${attempt.candidate.name} a terminé le test « ${attempt.test.title} »`,
-        intro: `${attempt.candidate.name} vient de terminer le test « ${attempt.test.title} ». Les résultats sont disponibles dans votre espace.`,
-        label: "Voir le test",
-        url: appUrl(`/tests/${attempt.test.id}`),
-      }),
-    );
-    await db.message.update({ where: { id: message.id }, data: { status: "SENT", sentAt: new Date() } });
+    const providerId = await send();
+    await db.message.update({ where: { id: message.id }, data: { status: "SENT", sentAt: new Date(), providerMessageId: providerId || null } });
+    return true;
   } catch (e) {
     await db.message.update({
       where: { id: message.id },
       data: { status: "FAILED", error: e instanceof Error ? e.message.slice(0, 500) : "erreur" },
     });
+    return false;
   }
+}
+
+// Fin du test : le candidat reçoit un message qui le remercie et lui annonce que l'entreprise
+// reviendra vers lui (par email, et par WhatsApp si le service est configuré).
+export async function thankCandidate(attemptId: string) {
+  const a = await db.attempt.findUnique({
+    where: { id: attemptId },
+    include: {
+      candidate: { select: { name: true, email: true, phone: true } },
+      test: { select: { title: true } },
+      company: { select: { name: true, contactEmail: true, contactPhone: true } },
+    },
+  });
+  if (!a) return;
+  const msg = candidateThanks({
+    candidateName: a.candidate.name,
+    companyName: a.company.name,
+    testTitle: a.test.title,
+    contactEmail: a.company.contactEmail,
+    contactPhone: a.company.contactPhone,
+  });
+  const base = { companyId: a.companyId, invitationId: a.invitationId, template: "remerciement_candidat" };
+  if (a.candidate.email) {
+    const to = a.candidate.email;
+    await tracked({ ...base, channel: "EMAIL", recipient: to }, () => sendEmail({ to, subject: msg.subject, text: msg.text, html: msg.html }));
+  }
+  if (a.candidate.phone && isChannelConfigured("WHATSAPP")) {
+    const to = a.candidate.phone;
+    await tracked({ ...base, channel: "WHATSAPP", recipient: to }, async () => (await sendWhatsApp(to, msg.whatsapp)).id);
+  }
+}
+
+// Envoie à l'employeur les résultats du candidat avec la correction question par question,
+// et le rapport PDF complet en pièce jointe. Appelé après la correction automatique et l'IA.
+export async function notifyRecruiterOfCompletion(attemptId: string) {
+  // Import différé : le rapport dépend du module des passages, qui dépend de celui-ci.
+  const { loadCandidateReport, renderReportPdf } = await import("@/lib/reports/candidate-report");
+  const loaded = await loadCandidateReport(attemptId);
+  if (!loaded) return;
+  const { attempt, report, filename } = loaded;
+  const creator = await db.user.findUnique({ where: { id: attempt.test.createdById }, select: { email: true } });
+  if (!creator) return;
+  const url = appUrl(`/tests/${attempt.testId}/resultats/${attempt.id}`);
+  const mail = employerResults({
+    candidateName: report.candidateName,
+    candidateContact: report.candidateContact,
+    testTitle: report.testTitle,
+    globalScore: report.globalScore,
+    passThreshold: report.passThreshold,
+    passed: report.passed,
+    pending: report.pending,
+    durationText: report.durationText,
+    reliabilityLabel: report.reliabilityLabel,
+    skills: report.skills,
+    correction: report.correction ?? [],
+    url,
+  });
+  let attachments: { filename: string; content: string }[] | undefined;
+  try {
+    attachments = [{ filename: `${filename || "rapport"}.pdf`, content: (await renderReportPdf(report)).toString("base64") }];
+  } catch (e) {
+    console.error("[fin du test] rapport PDF", e); // l'email part quand même, sans pièce jointe
+  }
+  await tracked(
+    { companyId: attempt.companyId, invitationId: attempt.invitationId, channel: "EMAIL", recipient: creator.email, template: "candidat_termine" },
+    () => sendEmail({ to: creator.email, subject: mail.subject, text: mail.text, html: mail.html, attachments }),
+  );
 }

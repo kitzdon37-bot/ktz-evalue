@@ -8,7 +8,7 @@ import { fromDb } from "@/lib/tests/repository";
 import { AUTO_GRADED, type QuestionData, type QuestionType } from "@/lib/tests/model";
 import { gradeClosed, type AnswerContent } from "@/lib/scoring/grade";
 import { computeScores } from "@/lib/scoring/score";
-import { notifyRecruiterOfCompletion } from "@/lib/messages";
+import { notifyRecruiterOfCompletion, thankCandidate } from "@/lib/messages";
 import { analyzeAttempt, processGradingQueue } from "@/lib/results";
 import { drawQuestions, type DrawnQuestion } from "./draw";
 import { codePoints, MAX_CODE_CHARS, runCodeTests } from "@/lib/scoring/code-runner";
@@ -276,8 +276,14 @@ export async function finishAttempt(
       db.invitation.update({ where: { id: inv.id }, data: { status: "COMPLETED" } }),
     ]);
     // Après la réponse au candidat (pour ne pas le ralentir) : analyse des signaux,
-    // correction des réponses ouvertes par l'IA, puis email au recruteur.
+    // correction des réponses ouvertes par l'IA, puis email au recruteur (résultats + correction).
+    // Le candidat reçoit d'abord son message de remerciement, sans attendre la correction.
     after(async () => {
+      try {
+        await thankCandidate(attemptId);
+      } catch (e) {
+        console.error("[fin du test] remerciement du candidat", e);
+      }
       try {
         await analyzeAttempt(attemptId);
         await processGradingQueue({ attemptId });

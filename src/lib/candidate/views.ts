@@ -517,9 +517,9 @@ export function donePage(v: {
     }
   }
   scoreBlock = scoreBlock.replace('class="c done"', 'class="c done d1"');
-  const body = `<div class="c done"><div class="ic">${CHECK_SVG}</div><h1>Test terminé, merci !</h1>
+  const body = `<div class="c done"><div class="ic">${CHECK_SVG}</div><h1>Merci d'avoir passé ce test !</h1>
 ${v.timedOut ? `<p class="al wa">Le temps du test est écoulé. Les réponses validées avant la fin ont bien été enregistrées.</p>` : `<p class="al ok">✓ Toutes vos réponses ont bien été enregistrées.</p>`}
-<p class="m">${esc(v.companyName)} a été prévenu et reviendra vers vous pour la suite du recrutement « ${esc(v.testTitle)} ». Bonne chance !</p>${contactBlock(v.contact)}</div>${scoreBlock}
+<p class="m">Merci pour le temps que vous avez consacré au test « ${esc(v.testTitle)} ». <b>${esc(v.companyName)}</b> a bien reçu vos réponses et reviendra vers vous très bientôt pour la suite du recrutement. Bonne chance !</p>${contactBlock(v.contact)}</div>${scoreBlock}
 <p class="ft">Vous pouvez fermer cette page · <b>KTZ Évalue</b></p>`;
   return layout({ title: "Test terminé", color: v.color, body, banner: v.banner });
 }

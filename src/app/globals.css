@@ -332,3 +332,20 @@ body {
 /* Barres d'onglets qui défilent au doigt : sans barre de défilement visible. */
 .no-scrollbar { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Logo 3D compact (à côté du titre de la page d'accueil) et version fond clair */
+.l3d-compact { width: calc(var(--l3d-size) * 1.4); height: calc(var(--l3d-size) * 1.4); }
+.l3d-compact .l3d-ring-1 { width: calc(var(--l3d-size) * 1.32); height: calc(var(--l3d-size) * 1.32); }
+.l3d-compact .l3d-ring-2 { width: calc(var(--l3d-size) * 1.16); height: calc(var(--l3d-size) * 1.16); }
+.l3d-compact .l3d-glow { width: calc(var(--l3d-size) * 1.2); height: calc(var(--l3d-size) * 1.2); filter: blur(22px); }
+.l3d-compact .l3d-shadow { bottom: 0; height: 12px; }
+.l3d-compact .l3d-particle { animation-name: l3dRiseShort; }
+.l3d-compact .l3d-ring i { width: 8px; height: 8px; margin-left: -4px; top: -4px; }
+.l3d-compact .l3d-ring-2 i { width: 6px; height: 6px; top: auto; bottom: -3px; }
+.l3d-compact .l3d-spark { border-width: 2px; }
+@keyframes l3dRiseShort { 0% { opacity: 0; transform: translateY(0) scale(.6); } 15% { opacity: .9; } 100% { opacity: 0; transform: translateY(-110px) scale(1); } }
+.l3d-light .l3d-ring { border-color: rgba(234, 88, 12, .28); }
+.l3d-light .l3d-ring-2 { border-color: rgba(217, 119, 6, .3); }
+.l3d-light .l3d-glow { background: radial-gradient(circle, rgba(251, 146, 60, .45), transparent 65%); }
+.l3d-light .l3d-shadow { background: radial-gradient(rgba(124, 45, 18, .3), transparent 70%); }
+.l3d-light .l3d-particle { background: #fb923c; }

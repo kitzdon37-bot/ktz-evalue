@@ -1,5 +1,6 @@
 import "server-only";
 import PDFDocument from "pdfkit";
+import { STATUS_LABELS, type CorrectionRow } from "./correction";
 
 export type CandidateReport = {
   companyName: string;
@@ -19,7 +20,42 @@ export type CandidateReport = {
   reliabilitySummary: string | null;
   interviewQuestions: string[];
   recruiterStatus: string;
+  /** Correction question par question (facultative). */
+  correction?: CorrectionRow[];
 };
+
+const STATUS_COLORS = { juste: "#047857", partiel: "#b45309", faux: "#b91c1c", attente: "#0369a1", "sans-reponse": "#6b7280" } as const;
+
+// Correction détaillée : une fiche par question (énoncé, réponse du candidat, bonne réponse, points).
+function drawCorrection(doc: PDFKit.PDFDocument, rows: CorrectionRow[], color: string, width: number) {
+  doc.addPage();
+  doc.x = 50;
+  doc.fillColor("#111827").font("Helvetica-Bold").fontSize(15).text("Correction détaillée");
+  const ok = rows.filter((x) => x.status === "juste").length;
+  doc.font("Helvetica").fontSize(10).fillColor("#4b5563").text(`${ok} réponse(s) juste(s) sur ${rows.length} question(s).`);
+  doc.moveDown(0.8);
+  const bottom = doc.page.height - 80;
+  for (const row of rows) {
+    if (doc.y > bottom - 70) {
+      doc.addPage();
+      doc.x = 50;
+    }
+    const top = doc.y;
+    const status = STATUS_LABELS[row.status];
+    const pts = row.points === null ? "—" : `${row.points}/${row.max} pt`;
+    doc.font("Helvetica-Bold").fontSize(9).fillColor(color).text(`Question ${row.n} · ${row.skill}`, 50, top, { width: width - 130 });
+    doc.font("Helvetica-Bold").fontSize(9).fillColor(STATUS_COLORS[row.status]).text(`${status} · ${pts}`, 50 + width - 130, top, { width: 130, align: "right" });
+    doc.x = 50;
+    doc.font("Helvetica").fontSize(10).fillColor("#111827").text(row.prompt, { width });
+    doc.moveDown(0.2);
+    doc.fontSize(9).fillColor("#374151").font("Helvetica-Bold").text("Réponse du candidat : ", { continued: true, width }).font("Helvetica").text(row.given);
+    doc.font("Helvetica-Bold").text("Bonne réponse : ", { continued: true, width }).font("Helvetica").text(row.expected);
+    if (row.comment) doc.font("Helvetica-Oblique").fillColor("#0c4a6e").text(`Avis de correction : ${row.comment}`, { width });
+    doc.moveDown(0.4);
+    doc.moveTo(50, doc.y).lineTo(50 + width, doc.y).strokeColor("#e5e7eb").lineWidth(0.5).stroke();
+    doc.moveDown(0.6);
+  }
+}
 
 // Rapport PDF d'un candidat : logo, scores, fiabilité, points forts et points à vérifier en entretien.
 export function renderCandidateReport(r: CandidateReport): Promise<Buffer> {
@@ -92,6 +128,8 @@ export function renderCandidateReport(r: CandidateReport): Promise<Buffer> {
   doc.font("Helvetica-Bold").fontSize(13).fillColor("#111827").text("Fiabilité du passage");
   doc.font("Helvetica").fontSize(10).fillColor("#374151").text(`${r.reliabilityLabel ?? "—"} : ${r.reliabilitySummary ?? "aucun signal"}.`);
   doc.fontSize(8).fillColor("#6b7280").text("Ces signaux sont des indices : aucun candidat n'est exclu automatiquement.");
+
+  if (r.correction?.length) drawCorrection(doc, r.correction, color, width);
 
   doc.fontSize(8).fillColor("#9ca3af").text(`Document confidentiel — généré le ${new Date().toLocaleDateString("fr-FR", { timeZone: "Africa/Bangui" })} par KTZ Évalue.`, 50, doc.page.height - 60, { width, align: "center" });
   doc.end();

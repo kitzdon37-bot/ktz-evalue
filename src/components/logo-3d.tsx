@@ -28,7 +28,10 @@ function Face({ back = false }: { back?: boolean }) {
   );
 }
 
-export function Logo3D({ size = 170 }: { size?: number }) {
+// size : taille du badge (nombre de pixels, ou valeur CSS comme « clamp(72px, 20vw, 120px) »).
+// compact : scène resserrée (anneaux plus proches) pour se glisser à côté d'un titre.
+// light : couleurs des anneaux et du halo adaptées à un fond clair.
+export function Logo3D({ size = 170, compact = false, light = false, className = "" }: { size?: number | string; compact?: boolean; light?: boolean; className?: string }) {
   const sceneRef = useRef<HTMLDivElement>(null);
 
   // Le badge s'incline vers la souris (ordinateur uniquement).
@@ -62,7 +65,12 @@ export function Logo3D({ size = 170 }: { size?: number }) {
   }, []);
 
   return (
-    <div ref={sceneRef} className="l3d-scene" style={{ "--l3d-size": `${size}px` } as React.CSSProperties} aria-hidden="true">
+    <div
+      ref={sceneRef}
+      className={`l3d-scene ${compact ? "l3d-compact" : ""} ${light ? "l3d-light" : ""} ${className}`}
+      style={{ "--l3d-size": typeof size === "number" ? `${size}px` : size } as React.CSSProperties}
+      aria-hidden="true"
+    >
       <div className="l3d-glow" />
       <div className="l3d-ring l3d-ring-1">
         <i />

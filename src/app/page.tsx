@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo3D } from "@/components/logo-3d";
 import {
   ArrowRight,
   BadgeCheck,
@@ -166,6 +167,8 @@ export default function HomePage() {
               Code, raisonnement illustré, culture générale
               <ArrowRight className="h-3.5 w-3.5 text-brand-600 transition-transform group-hover:translate-x-0.5" />
             </a>
+            {/* Logo KTZ Évalue en 3D, à côté du titre (ordinateur et téléphone) */}
+            <Logo3D compact light size="clamp(62px, 17vw, 112px)" className="float-right -mr-1 -mt-3 ml-1 sm:-mt-6" />
             <h1 className="rise text-[2.6rem] font-extrabold leading-[1.04] tracking-tight text-stone-900 sm:text-6xl lg:text-[4.1rem]" style={{ "--i": 1 } as React.CSSProperties}>
               Trouvez les meilleurs
               <br />

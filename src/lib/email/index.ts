@@ -1,6 +1,13 @@
 import "server-only";
 
-type Email = { to: string; subject: string; text: string; html: string };
+export type Email = {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+  /** Pièces jointes (contenu en base64), par exemple le rapport PDF d'un candidat. */
+  attachments?: { filename: string; content: string }[];
+};
 
 // Envoi d'email par Resend. Sans clé Resend, en développement, l'email est
 // affiché dans le terminal pour pouvoir tester sans compte.
@@ -10,7 +17,8 @@ export async function sendEmail(email: Email): Promise<void> {
     if (process.env.NODE_ENV === "production") {
       throw new Error("RESEND_API_KEY manquante : impossible d'envoyer l'email.");
     }
-    console.log(`\n[email de test] À : ${email.to}\nObjet : ${email.subject}\n${email.text}\n`);
+    const files = email.attachments?.map((a) => `${a.filename} (${Math.round((a.content.length * 3) / 4 / 1024)} Ko)`).join(", ");
+    console.log(`\n[email de test] À : ${email.to}\nObjet : ${email.subject}\n${email.text}${files ? `\nPièces jointes : ${files}` : ""}\n`);
     return;
   }
   const res = await fetch("https://api.resend.com/emails", {
@@ -22,6 +30,7 @@ export async function sendEmail(email: Email): Promise<void> {
       subject: email.subject,
       text: email.text,
       html: email.html,
+      ...(email.attachments?.length ? { attachments: email.attachments } : {}),
     }),
   });
   if (!res.ok) {
@@ -34,7 +43,7 @@ export function appUrl(path: string): string {
   return new URL(path, base).toString();
 }
 
-function escapeHtml(s: string): string {
+export function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 }
 
