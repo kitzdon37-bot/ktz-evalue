@@ -17,10 +17,10 @@ export function esc(s: string | null | undefined): string {
 const CSS = `*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
 body{margin:0;min-height:100vh;position:relative;overflow-x:hidden;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:17px;line-height:1.55;color:#1c1917;background:#f7f5f1}
 body:before,body:after{content:"";position:absolute;pointer-events:none;background:radial-gradient(closest-side,var(--b),rgba(255,255,255,0))}
-body:before{left:0;right:0;top:-300px;height:620px;opacity:.13;-webkit-animation:breathe 9s ease-in-out infinite alternate;animation:breathe 9s ease-in-out infinite alternate}
+body:before{left:8%;right:8%;top:-300px;height:620px;opacity:.13;-webkit-animation:breathe 9s ease-in-out infinite alternate;animation:breathe 9s ease-in-out infinite alternate}
 body:after{right:-180px;bottom:-200px;width:520px;height:520px;opacity:.07;position:fixed;-webkit-animation:breathe 12s ease-in-out infinite alternate-reverse;animation:breathe 12s ease-in-out infinite alternate-reverse}
 @-webkit-keyframes breathe{from{-webkit-transform:scale(1)}to{-webkit-transform:scale(1.15) translateY(20px)}}@keyframes breathe{from{transform:scale(1)}to{transform:scale(1.15) translateY(20px)}}
-.w{position:relative;max-width:680px;margin:0 auto;padding:16px 14px 32px}
+.w{position:relative;max-width:680px;margin:0 auto;padding:16px 14px 32px;overflow-x:clip}
 .c{position:relative;background:#fff;border:1px solid #ece8e1;border-radius:24px;padding:22px;margin-bottom:14px;box-shadow:0 1px 2px rgba(28,25,23,.04),0 22px 44px -28px rgba(28,25,23,.28)}
 h1{font-size:27px;line-height:1.2;margin:0 0 8px;letter-spacing:-.025em}h2{font-size:18px;margin:0 0 10px;letter-spacing:-.01em}p{margin:8px 0}.m{color:#57534e;font-size:15px}
 .tn{position:relative;z-index:0}.tn:before{content:"";position:absolute;z-index:-1;top:0;right:0;bottom:0;left:0;border-radius:inherit;background:var(--b);opacity:.1;pointer-events:none}

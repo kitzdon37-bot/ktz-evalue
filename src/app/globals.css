@@ -326,3 +326,9 @@ body {
 .auth-card-in { animation: authCardIn .9s cubic-bezier(.2, .8, .2, 1) both; transform-origin: 50% 0; }
 @keyframes authCardIn { from { opacity: 0; transform: perspective(1000px) rotateX(14deg) translateY(28px) scale(.97); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .auth-card-in { animation: none; } }
+
+/* Mobile : un élément de grille ne doit jamais élargir la page (texte long, ligne sans retour…). */
+:where(.grid) > * { min-width: 0; }
+/* Barres d'onglets qui défilent au doigt : sans barre de défilement visible. */
+.no-scrollbar { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.no-scrollbar::-webkit-scrollbar { display: none; }

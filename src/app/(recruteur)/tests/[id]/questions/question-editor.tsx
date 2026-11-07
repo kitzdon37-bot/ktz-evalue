@@ -113,7 +113,7 @@ export function QuestionEditor({
                         name="correct"
                         value={i}
                         defaultChecked={!!c.id && correct.has(c.id)}
-                        className="h-5 w-5 shrink-0"
+                        className="h-6 w-6 shrink-0 cursor-pointer accent-brand-600"
                         aria-label={`Choix ${i + 1} correct`}
                       />
                     ) : (
@@ -121,7 +121,7 @@ export function QuestionEditor({
                         type="checkbox"
                         name={`correct_${i}`}
                         defaultChecked={!!c.id && correct.has(c.id)}
-                        className="h-5 w-5 shrink-0"
+                        className="h-6 w-6 shrink-0 cursor-pointer accent-brand-600"
                         aria-label={`Choix ${i + 1} correct`}
                       />
                     )}

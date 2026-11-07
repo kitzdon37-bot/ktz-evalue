@@ -313,7 +313,7 @@ export function NewTestForm({ aiAvailable }: { aiAvailable: boolean }) {
                   key={d}
                   type="button"
                   onClick={() => pickDuration(String(d))}
-                  className={`rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${duration === String(d) ? "border-brand-600 bg-brand-600 text-white" : "border-stone-200 bg-white text-stone-700 hover:border-stone-300"}`}
+                  className={`rounded-lg border px-3 py-2 text-xs font-semibold transition ${duration === String(d) ? "border-brand-600 bg-brand-600 text-white" : "border-stone-200 bg-white text-stone-700 hover:border-stone-300"}`}
                 >
                   {d < 60 ? `${d} min` : `${d / 60} h`}
                 </button>

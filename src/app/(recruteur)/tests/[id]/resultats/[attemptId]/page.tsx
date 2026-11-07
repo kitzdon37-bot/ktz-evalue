@@ -68,13 +68,13 @@ async function Content({ params }: PageProps<"/tests/[id]/resultats/[attemptId]"
     <>
       <BackLink href={`/tests/${id}/resultats`}>Classement</BackLink>
       <div className="mb-6 flex flex-col gap-4 rounded-3xl border border-stone-200/80 bg-white p-6 shadow-soft sm:flex-row sm:items-center sm:justify-between sm:p-8">
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 items-center gap-4">
           <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-800 text-xl font-extrabold text-white shadow-md">
             {attempt.candidate.name.slice(0, 1).toUpperCase()}
           </span>
-          <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-stone-900">{attempt.candidate.name}</h1>
-          <p className="text-stone-600">{[attempt.candidate.email, attempt.candidate.phone].filter(Boolean).join(" · ")}</p>
+          <div className="min-w-0">
+          <h1 className="break-words text-2xl font-extrabold tracking-tight text-stone-900">{attempt.candidate.name}</h1>
+          <p className="text-stone-600 [overflow-wrap:anywhere]">{[attempt.candidate.email, attempt.candidate.phone].filter(Boolean).join(" · ")}</p>
           <p className="text-sm text-stone-600">
             {attempt.test.title} · commencé le {attempt.startedAt.toLocaleString("fr-FR", { timeZone: "Africa/Bangui" })}
             {attempt.completedAt &&

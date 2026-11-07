@@ -12,7 +12,7 @@ const STEPS = [
 export function TestSteps({ testId, current }: { testId: string; current: (typeof STEPS)[number]["key"] }) {
   const currentIndex = STEPS.findIndex((s) => s.key === current);
   return (
-    <nav className="mb-8 overflow-x-auto" aria-label="Étapes du test">
+    <nav className="no-scrollbar mb-8 overflow-x-auto" aria-label="Étapes du test">
       <ol className="flex min-w-max items-center gap-2 rounded-2xl border border-stone-200/80 bg-white p-1.5 shadow-soft">
         {STEPS.map((s, i) => {
           const active = s.key === current;

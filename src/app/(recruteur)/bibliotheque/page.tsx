@@ -101,7 +101,7 @@ async function Library() {
                   ))}
                 </div>
                 <details className="group mt-4 text-sm">
-                  <summary className="cursor-pointer list-none font-semibold text-brand-700 hover:text-brand-800">
+                  <summary className="-my-1 cursor-pointer list-none py-2 font-semibold text-brand-700 hover:text-brand-800">
                     <span className="group-open:hidden">Voir les questions ▾</span>
                     <span className="hidden group-open:inline">Masquer les questions ▴</span>
                   </summary>
