@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { Logo } from "@/components/logo";
+import { Logo3D, LogoAnimated } from "@/components/logo-3d";
 
 const POINTS = [
   "Un test adapté à votre offre en moins de 10 minutes",
@@ -23,6 +24,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <Link href="/" className="relative">
           <Logo light />
         </Link>
+        <div className="relative -my-6 flex justify-center">
+          <Logo3D size={150} />
+        </div>
         <div className="relative">
           <h2 className="text-3xl font-extrabold leading-tight tracking-tight">
             Recrutez sur les compétences, <span className="text-brand-400">pas seulement sur le CV.</span>
@@ -43,10 +47,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
       {/* Formulaire */}
       <div className="flex flex-col items-center justify-center px-4 py-10 sm:px-8">
-        <Link href="/" className="mb-8 lg:hidden">
-          <Logo />
+        <Link href="/" className="mb-8 lg:hidden" aria-label="KTZ Évalue — accueil">
+          <LogoAnimated />
         </Link>
-        <div className="w-full max-w-md rounded-3xl border border-stone-200/80 bg-white p-7 shadow-lift sm:p-9">{children}</div>
+        <div className="auth-card-in w-full max-w-md rounded-3xl border border-stone-200/80 bg-white p-7 shadow-lift sm:p-9">{children}</div>
       </div>
     </main>
   );

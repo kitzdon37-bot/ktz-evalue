@@ -269,3 +269,60 @@ body {
   .test-row span:last-child, .test-total, .rubric-row { opacity: 1; }
   [data-parallax] { transform: none !important; }
 }
+
+/* ───── Logo 3D de la page de connexion ───── */
+.l3d-scene { --l3d-size: 170px; --tilt-x: 0deg; --tilt-y: 0deg; position: relative; width: calc(var(--l3d-size) * 1.9); height: calc(var(--l3d-size) * 1.6); display: grid; place-items: center; perspective: 900px; }
+.l3d-tilt { transform-style: preserve-3d; transform: rotateX(var(--tilt-x)) rotateY(var(--tilt-y)); transition: transform .5s cubic-bezier(.2, .8, .2, 1); }
+.l3d-float { transform-style: preserve-3d; animation: l3dFloat 6s ease-in-out infinite; }
+.l3d-spin { position: relative; width: var(--l3d-size); height: var(--l3d-size); transform-style: preserve-3d; animation: l3dSpin 11s cubic-bezier(.65, 0, .35, 1) infinite; }
+.l3d-layer, .l3d-face { position: absolute; inset: 0; border-radius: 28%; }
+.l3d-layer { background: linear-gradient(135deg, #f97316, #9a3412); }
+.l3d-face { display: grid; place-items: center; overflow: hidden; background: linear-gradient(135deg, #fdba74 0%, #fb923c 30%, #ea580c 65%, #c2410c 100%); box-shadow: inset 0 2px 0 rgba(255, 255, 255, .45), inset 0 -6px 14px rgba(124, 45, 18, .45); transform: translateZ(1px); backface-visibility: hidden; }
+.l3d-back { transform: translateZ(calc(-2px * 11)) rotateY(180deg); }
+.l3d-face svg { width: 100%; height: 100%; filter: drop-shadow(0 4px 6px rgba(124, 45, 18, .45)); }
+.l3d-check { stroke-dasharray: 30; stroke-dashoffset: 30; animation: l3dDraw 11s ease-in-out infinite; }
+.l3d-shine { position: absolute; inset: -40%; background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, .55) 50%, transparent 60%); transform: translateX(-70%); animation: l3dShine 11s ease-in-out infinite; }
+.l3d-spark { position: absolute; top: 4%; right: 4%; width: 24%; height: 24%; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fef3c7, #fbbf24 55%, #d97706); border: 3px solid #fff; transform: translateZ(18px); box-shadow: 0 0 22px 6px rgba(251, 191, 36, .65); animation: l3dTwinkle 2.4s ease-in-out infinite; }
+.l3d-glow { position: absolute; width: calc(var(--l3d-size) * 1.5); height: calc(var(--l3d-size) * 1.5); border-radius: 50%; background: radial-gradient(circle, rgba(249, 115, 22, .55), transparent 65%); filter: blur(30px); animation: l3dBreathe 5s ease-in-out infinite; }
+.l3d-ring { position: absolute; width: calc(var(--l3d-size) * 1.75); height: calc(var(--l3d-size) * 1.75); border-radius: 50%; border: 1.5px solid rgba(253, 186, 116, .35); transform-style: preserve-3d; }
+.l3d-ring-1 { animation: l3dOrbit1 14s linear infinite; }
+.l3d-ring-2 { width: calc(var(--l3d-size) * 1.45); height: calc(var(--l3d-size) * 1.45); border-color: rgba(251, 191, 36, .28); border-style: dashed; animation: l3dOrbit2 20s linear infinite; }
+.l3d-ring i { position: absolute; top: -6px; left: 50%; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: #fb923c; box-shadow: 0 0 16px 4px rgba(251, 146, 60, .9); }
+.l3d-ring-2 i { top: auto; bottom: -5px; width: 9px; height: 9px; background: #fde68a; box-shadow: 0 0 14px 4px rgba(253, 230, 138, .8); }
+.l3d-shadow { position: absolute; bottom: 6%; width: calc(var(--l3d-size) * .8); height: 18px; border-radius: 50%; background: radial-gradient(rgba(0, 0, 0, .55), transparent 70%); animation: l3dShadow 6s ease-in-out infinite; }
+.l3d-particle { position: absolute; bottom: 8%; border-radius: 50%; background: #fdba74; opacity: 0; box-shadow: 0 0 10px 2px rgba(253, 186, 116, .7); animation: l3dRise 8s ease-in infinite; }
+.l3d-mini { display: inline-block; animation: l3dSway 5s ease-in-out infinite; transform-style: preserve-3d; filter: drop-shadow(0 8px 14px rgba(234, 88, 12, .35)); }
+.l3d-mini .l3d-check { animation-duration: 6s; }
+.l3d-mini-spark { transform-origin: 31px 9px; animation: l3dTwinkle 2.4s ease-in-out infinite; }
+
+@keyframes l3dSpin {
+  0% { transform: rotateY(-22deg) rotateX(10deg); }
+  28% { transform: rotateY(22deg) rotateX(-4deg); }
+  56% { transform: rotateY(-22deg) rotateX(10deg); }
+  78%, 100% { transform: rotateY(338deg) rotateX(10deg); }
+}
+@keyframes l3dFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes l3dShadow { 0%, 100% { transform: scale(1); opacity: .9; } 50% { transform: scale(.75); opacity: .5; } }
+@keyframes l3dDraw { 0%, 4% { stroke-dashoffset: 30; } 16%, 92% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 30; } }
+@keyframes l3dShine { 0%, 18% { transform: translateX(-70%); } 30%, 100% { transform: translateX(70%); } }
+@keyframes l3dTwinkle { 0%, 100% { transform: translateZ(18px) scale(1); } 50% { transform: translateZ(18px) scale(1.2); filter: brightness(1.25); } }
+.l3d-mini-spark { animation-name: l3dTwinkleFlat; }
+@keyframes l3dTwinkleFlat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+@keyframes l3dBreathe { 0%, 100% { transform: scale(1); opacity: .9; } 50% { transform: scale(1.18); opacity: .6; } }
+@keyframes l3dOrbit1 { from { transform: rotateX(72deg) rotateZ(0deg); } to { transform: rotateX(72deg) rotateZ(360deg); } }
+@keyframes l3dOrbit2 { from { transform: rotateX(64deg) rotateY(18deg) rotateZ(360deg); } to { transform: rotateX(64deg) rotateY(18deg) rotateZ(0deg); } }
+@keyframes l3dRise { 0% { opacity: 0; transform: translateY(0) scale(.6); } 15% { opacity: .9; } 100% { opacity: 0; transform: translateY(-220px) scale(1.1); } }
+@keyframes l3dSway { 0%, 100% { transform: perspective(300px) rotateY(-14deg) rotateX(6deg); } 50% { transform: perspective(300px) rotateY(14deg) rotateX(-4deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .l3d-spin, .l3d-float, .l3d-ring, .l3d-shine, .l3d-spark, .l3d-glow, .l3d-shadow, .l3d-particle, .l3d-mini, .l3d-mini-spark { animation: none !important; }
+  .l3d-spin { transform: rotateY(-18deg) rotateX(8deg); }
+  .l3d-ring-1 { transform: rotateX(72deg); }
+  .l3d-ring-2 { transform: rotateX(64deg) rotateY(18deg); }
+  .l3d-check { animation: none !important; stroke-dashoffset: 0; }
+}
+
+/* Carte du formulaire de connexion : arrivée en 3D */
+.auth-card-in { animation: authCardIn .9s cubic-bezier(.2, .8, .2, 1) both; transform-origin: 50% 0; }
+@keyframes authCardIn { from { opacity: 0; transform: perspective(1000px) rotateX(14deg) translateY(28px) scale(.97); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .auth-card-in { animation: none; } }
