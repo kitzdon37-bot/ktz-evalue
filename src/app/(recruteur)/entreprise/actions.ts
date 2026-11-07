@@ -8,6 +8,7 @@ import { generateToken, hashToken } from "@/lib/auth/tokens";
 import { appUrl, linkEmail, sendEmail } from "@/lib/email";
 import { COUNTRIES } from "@/lib/countries";
 import type { FormState } from "@/lib/auth/schemas";
+import { isValidLogo, logoPublicPath, normalizeWebsite } from "@/lib/company/logo";
 
 const MAX_MEMBERS = 3; // membres invités, en plus du propriétaire
 const INVITE_DAYS = 7;
@@ -18,22 +19,58 @@ const CompanySchema = z.object({
   country: z.string().refine((c) => c in COUNTRIES, { error: "Pays invalide." }),
   city: z.string().trim().max(80),
   primaryColor: z.union([z.literal(""), z.string().regex(/^#[0-9a-fA-F]{6}$/, { error: "Couleur invalide." })]),
+  description: z.string().trim().max(500, { error: "500 caractères au maximum." }),
+  website: z.string().trim().max(200),
+  contactEmail: z.union([z.literal(""), z.string().trim().toLowerCase().pipe(z.email({ error: "Adresse email invalide." }))]),
+  contactPhone: z.union([z.literal(""), z.string().trim().regex(/^\+?[0-9 ().-]{6,25}$/, { error: "Numéro invalide." })]),
 });
+
+// Champ caché « logo » : « keep » = inchangé, vide = retirer, sinon le nouveau logo compressé.
+function readLogo(value: FormDataEntryValue | null): { keep: true } | { keep: false; data: string | null } | { error: string } {
+  const v = typeof value === "string" ? value : "keep";
+  if (v === "keep") return { keep: true };
+  if (v === "") return { keep: false, data: null };
+  if (!isValidLogo(v)) return { error: "Le logo doit être une image PNG ou JPEG de moins de 300 Ko. Réessayez avec une autre image." };
+  return { keep: false, data: v };
+}
 
 export async function updateCompany(_state: FormState, formData: FormData): Promise<FormState> {
   const user = await requireOwner();
+  const field = (k: string) => String(formData.get(k) ?? "");
   const parsed = CompanySchema.safeParse({
     name: formData.get("name"),
-    sector: formData.get("sector") ?? "",
+    sector: field("sector"),
     country: formData.get("country"),
-    city: formData.get("city") ?? "",
-    primaryColor: formData.get("primaryColor") ?? "",
+    city: field("city"),
+    primaryColor: field("primaryColor"),
+    description: field("description"),
+    website: field("website"),
+    contactEmail: field("contactEmail"),
+    contactPhone: field("contactPhone"),
   });
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
   const d = parsed.data;
+  const website = normalizeWebsite(d.website);
+  if (website === null) return { errors: { website: ["Adresse de site invalide (ex. : www.mon-entreprise.com)."] } };
+  const logo = readLogo(formData.get("logo"));
+  if ("error" in logo) return { errors: { logo: [logo.error] } };
+
   await db.company.update({
     where: { id: user.companyId },
-    data: { name: d.name, sector: d.sector || null, country: d.country, city: d.city || null, primaryColor: d.primaryColor || null },
+    data: {
+      name: d.name,
+      sector: d.sector || null,
+      country: d.country,
+      city: d.city || null,
+      primaryColor: d.primaryColor || null,
+      description: d.description || null,
+      website: website || null,
+      contactEmail: d.contactEmail || null,
+      contactPhone: d.contactPhone || null,
+      ...(logo.keep
+        ? {}
+        : { logoData: logo.data, logoUrl: logo.data ? logoPublicPath(user.companyId) : null }),
+    },
   });
   refresh();
   return { success: "Fiche entreprise enregistrée." };

@@ -87,6 +87,7 @@ function render(inv: LoadedInvitation, attempt: LoadedAttempt | null, error?: st
         companyName: inv.company.name,
         color,
         logoUrl: inv.company.logoUrl,
+        about: { description: inv.company.description, website: inv.company.website },
         testTitle: inv.test.title,
         candidateName: inv.candidate.name,
         durationMinutes: inv.test.durationMinutes,
@@ -110,6 +111,7 @@ function render(inv: LoadedInvitation, attempt: LoadedAttempt | null, error?: st
         score: attempt.globalScore,
         showScore: inv.test.showScoreToCandidate,
         pending: attempt.gradingStatus !== "DONE",
+        contact: { email: inv.company.contactEmail, phone: inv.company.contactPhone },
       }),
     );
   }
@@ -123,6 +125,7 @@ function render(inv: LoadedInvitation, attempt: LoadedAttempt | null, error?: st
       token: inv.token,
       color,
       companyName: inv.company.name,
+      logoUrl: inv.company.logoUrl,
       testTitle: inv.test.title,
       index: attempt.currentIndex + 1,
       total: order.length,

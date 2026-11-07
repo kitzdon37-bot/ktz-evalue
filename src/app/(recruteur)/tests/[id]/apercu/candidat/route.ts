@@ -15,7 +15,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/tests/[id]/aperc
   const test = await getCompanyTest(id, user.companyId);
   const company = await db.company.findUniqueOrThrow({
     where: { id: user.companyId },
-    select: { name: true, primaryColor: true, logoUrl: true },
+    select: { name: true, logoUrl: true, primaryColor: true, description: true, website: true, contactEmail: true, contactPhone: true },
   });
 
   // Questions posées (hors réserve), dans l'ordre des compétences.
@@ -37,6 +37,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/tests/[id]/aperc
       companyName: company.name,
       color: company.primaryColor,
       logoUrl: company.logoUrl,
+      about: { description: company.description, website: company.website },
       testTitle: test.title,
       candidateName: "Candidat",
       durationMinutes: test.durationMinutes,
@@ -56,6 +57,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/tests/[id]/aperc
       token: "apercu",
       color: company.primaryColor,
       companyName: company.name,
+      logoUrl: company.logoUrl,
       testTitle: test.title,
       index: step,
       total: questions.length,
@@ -78,6 +80,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/tests/[id]/aperc
       score: test.showScoreToCandidate ? 78 : null,
       showScore: test.showScoreToCandidate,
       pending: false,
+      contact: { email: company.contactEmail, phone: company.contactPhone },
       banner,
     });
   }

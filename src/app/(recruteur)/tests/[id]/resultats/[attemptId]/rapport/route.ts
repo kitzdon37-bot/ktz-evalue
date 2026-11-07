@@ -7,9 +7,11 @@ import { requireCompany } from "@/lib/tenant";
 import { formatDuration, RECRUITER_STATUS_LABELS } from "@/lib/results-view";
 import { RELIABILITY_LABELS, type ReliabilityLevel } from "@/lib/scoring/reliability";
 import { renderCandidateReport } from "@/lib/reports/candidate-pdf";
+import { decodeLogo, isInternalLogo } from "@/lib/company/logo";
 
-async function fetchLogo(url: string | null): Promise<Buffer | null> {
+async function fetchLogo(url: string | null, logoData: string | null): Promise<Buffer | null> {
   if (!url) return null;
+  if (isInternalLogo(url)) return decodeLogo(logoData)?.bytes ?? null;
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
     if (!res.ok) return null;
@@ -28,7 +30,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext<"/tests/[id]/resu
     where: { id: attemptId, testId: id, companyId: user.companyId },
     include: {
       candidate: true,
-      company: { select: { name: true, primaryColor: true, logoUrl: true } },
+      company: { select: { name: true, primaryColor: true, logoUrl: true, logoData: true } },
       test: { include: { skills: { orderBy: { position: "asc" } } } },
     },
   });
@@ -40,7 +42,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext<"/tests/[id]/resu
   const pdf = await renderCandidateReport({
     companyName: a.company.name,
     companyColor: a.company.primaryColor,
-    logo: await fetchLogo(a.company.logoUrl),
+    logo: await fetchLogo(a.company.logoUrl, a.company.logoData),
     testTitle: a.test.title,
     candidateName: a.candidate.name,
     candidateContact: [a.candidate.email, a.candidate.phone].filter(Boolean).join(" · "),

@@ -23,7 +23,7 @@ export async function loadInvitation(token: string) {
     where: { token },
     include: {
       candidate: { select: { id: true, name: true } },
-      company: { select: { name: true, logoUrl: true, primaryColor: true } },
+      company: { select: { name: true, logoUrl: true, primaryColor: true, description: true, website: true, contactEmail: true, contactPhone: true } },
       test: {
         include: {
           skills: { orderBy: { position: "asc" }, include: { questions: { orderBy: { position: "asc" } } } },

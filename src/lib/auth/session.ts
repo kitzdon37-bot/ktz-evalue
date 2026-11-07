@@ -50,6 +50,7 @@ export type CurrentUser = {
   isPlatformAdmin: boolean;
   companyId: string | null;
   companyName: string | null;
+  companyLogoUrl: string | null;
 };
 
 // Lit la session une seule fois par requête (cache de React).
@@ -70,7 +71,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
           isPlatformAdmin: true,
           deletedAt: true,
           companyId: true,
-          company: { select: { name: true } },
+          company: { select: { name: true, logoUrl: true } },
         },
       },
     },
@@ -86,6 +87,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     isPlatformAdmin: u.isPlatformAdmin,
     companyId: u.companyId,
     companyName: u.company?.name ?? null,
+    companyLogoUrl: u.company?.logoUrl ?? null,
   };
 });
 

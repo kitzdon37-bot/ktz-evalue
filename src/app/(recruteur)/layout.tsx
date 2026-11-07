@@ -26,9 +26,14 @@ async function UserMenu() {
         <p className="text-sm font-semibold text-stone-900">{user.name}</p>
         {user.companyName && <p className="text-xs text-stone-500">{user.companyName}</p>}
       </div>
-      <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-brand-500 to-brand-800 text-sm font-bold text-white ring-2 ring-white">
-        {initials(user.name)}
-      </span>
+      {user.companyLogoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- logo servi par le site (/logo/…)
+        <img src={user.companyLogoUrl} alt={user.companyName ?? "Logo"} className="h-9 w-auto max-w-24 rounded-lg bg-white object-contain p-0.5 ring-1 ring-stone-200" />
+      ) : (
+        <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-brand-500 to-brand-800 text-sm font-bold text-white ring-2 ring-white">
+          {initials(user.name)}
+        </span>
+      )}
       <form action={logout}>
         <button
           type="submit"

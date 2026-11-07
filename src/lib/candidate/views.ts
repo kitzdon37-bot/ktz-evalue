@@ -25,6 +25,8 @@ body:after{right:-180px;bottom:-200px;width:520px;height:520px;opacity:.07;posit
 h1{font-size:27px;line-height:1.2;margin:0 0 8px;letter-spacing:-.025em}h2{font-size:18px;margin:0 0 10px;letter-spacing:-.01em}p{margin:8px 0}.m{color:#57534e;font-size:15px}
 .tn{position:relative;z-index:0}.tn:before{content:"";position:absolute;z-index:-1;top:0;right:0;bottom:0;left:0;border-radius:inherit;background:var(--b);opacity:.1;pointer-events:none}
 .co{display:flex;align-items:center;gap:10px;font-weight:700;margin:0 0 16px;font-size:15px}
+.lg{flex:none;height:40px;width:auto;max-width:120px;object-fit:contain;border-radius:11px;background:#fff;padding:3px;box-shadow:0 6px 16px -6px rgba(0,0,0,.45)}
+.ab{font-size:14px;color:#57534e;border-left:3px solid var(--b);padding:2px 0 2px 10px;margin:10px 0 0}.ab a{color:var(--b);font-weight:600}.ab.ct{border:0;padding:0;text-align:center}
 .av{flex:none;width:40px;height:40px;border-radius:13px;background:var(--b);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;box-shadow:0 6px 16px -6px rgba(0,0,0,.45)}
 .ph{position:relative;margin:-22px -22px 20px;height:190px;border-radius:23px 23px 0 0;overflow:hidden;background:#e9e3da url(/images/test/candidate.jpg) center 18%/cover no-repeat}
 .ph:after{content:"";position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(to top,rgba(20,16,12,.72),rgba(20,16,12,0) 62%)}
@@ -146,7 +148,7 @@ const CHECK_SVG = `<svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="
 
 function avatar(companyName: string, logoUrl?: string | null) {
   return logoUrl
-    ? `<img src="${esc(logoUrl)}" alt="" style="max-height:40px;max-width:120px;border-radius:10px;background:#fff;padding:2px">`
+    ? `<img class="lg" src="${esc(logoUrl)}" alt="">`
     : `<span class="av">${esc(companyName.slice(0, 1).toUpperCase())}</span>`;
 }
 
@@ -188,11 +190,23 @@ const photoStyle = (photo?: string) => (photo && /^\/images\/test\/[a-z]+\.jpg$/
 
 // ───── Accueil du test ─────
 
+export type About = { description?: string | null; website?: string | null };
+
+// Présentation courte de l'entreprise (fiche entreprise), avec son site web.
+function aboutBlock(companyName: string, about?: About) {
+  if (!about?.description && !about?.website) return "";
+  const site = about.website && /^https?:\/\//.test(about.website)
+    ? ` <a href="${esc(about.website)}" target="_blank" rel="noopener nofollow">${esc(about.website.replace(/^https?:\/\/(www\.)?/, ""))}</a>`
+    : "";
+  return `<p class="ab"><b>${esc(companyName)}</b>${about.description ? ` — ${esc(about.description)}` : ""}${site}</p>`;
+}
+
 export function welcomePage(v: {
   token: string;
   companyName: string;
   color: string | null;
   logoUrl: string | null;
+  about?: About;
   testTitle: string;
   candidateName: string;
   durationMinutes: number;
@@ -220,6 +234,7 @@ export function welcomePage(v: {
 <p class="hi tn">Bonjour ${esc(v.candidateName)} 👋</p>
 <h1>${esc(v.testTitle)}</h1>
 <p class="m">Voici le test de recrutement préparé pour vous. Prenez quelques secondes pour lire les règles, puis lancez-vous.</p>
+${aboutBlock(v.companyName, v.about)}
 <div class="st"><div><b>${duration}</b><span>minutes${v.extraTimePercent ? ` (+${v.extraTimePercent} %)` : ""}</span></div><div><b>${v.questionCount}</b><span>questions</span></div><div><b>${esc(until)}</b><span>date limite</span></div></div></div>
 <div class="c d1"><h2>Avant de commencer</h2><ul class="rl">
 ${rules.map((r, i) => `<li><i class="tn">${i + 1}</i><span>${r}</span></li>`).join("\n")}</ul></div>
@@ -272,6 +287,7 @@ export function questionPage(v: {
   token: string;
   color: string | null;
   companyName: string;
+  logoUrl?: string | null;
   testTitle: string;
   index: number;
   total: number;
@@ -352,7 +368,7 @@ export function questionPage(v: {
   const low = v.questionRemainingSec <= Math.max(10, qTotal * 0.2);
   const percent = Math.max(3, Math.round(((v.index - 1) / v.total) * 100));
 
-  const body = `<div class="top"><div class="hd"><p class="co"><span class="av">${esc(v.companyName.slice(0, 1).toUpperCase())}</span><span>${esc(v.testTitle)}</span></p>
+  const body = `<div class="top"><div class="hd"><p class="co">${avatar(v.companyName, v.logoUrl)}<span>${esc(v.testTitle)}</span></p>
 <div class="ring${low ? " low" : ""}" id="rg" role="timer" aria-label="Temps restant pour cette question"><svg width="58" height="58" viewBox="0 0 58 58"><circle class="bg" cx="29" cy="29" r="25"/><circle class="fg" id="rf" cx="29" cy="29" r="25" stroke-dasharray="${C}" stroke-dashoffset="${offset}"/></svg><b id="qt">${formatDuration(v.questionRemainingSec)}</b></div></div>
 <div class="pr"><span>Question <b>${v.index}</b> sur ${v.total}</span><span>Temps du test <span class="t" id="tt">${formatDuration(v.totalRemainingSec)}</span></span></div>
 <div class="bar" role="progressbar" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"><div style="width:${percent}%"></div></div></div>
@@ -470,6 +486,15 @@ self.postMessage({r:res,logs:logs})}catch(x){self.postMessage({err:String(x),log
 
 // ───── Fin du test ─────
 
+function contactBlock(c?: { email?: string | null; phone?: string | null }) {
+  if (!c?.email && !c?.phone) return "";
+  const parts = [
+    c.email ? `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : "",
+    c.phone ? `<a href="tel:${esc(c.phone.replace(/[^+0-9]/g, ""))}">${esc(c.phone)}</a>` : "",
+  ].filter(Boolean);
+  return `<p class="ab ct">Une question sur votre candidature ? ${parts.join(" · ")}</p>`;
+}
+
 export function donePage(v: {
   color: string | null;
   companyName: string;
@@ -479,6 +504,7 @@ export function donePage(v: {
   showScore: boolean;
   pending: boolean;
   banner?: string;
+  contact?: { email?: string | null; phone?: string | null };
 }) {
   let scoreBlock = "";
   if (v.showScore) {
@@ -493,7 +519,7 @@ export function donePage(v: {
   scoreBlock = scoreBlock.replace('class="c done"', 'class="c done d1"');
   const body = `<div class="c done"><div class="ic">${CHECK_SVG}</div><h1>Test terminé, merci !</h1>
 ${v.timedOut ? `<p class="al wa">Le temps du test est écoulé. Les réponses validées avant la fin ont bien été enregistrées.</p>` : `<p class="al ok">✓ Toutes vos réponses ont bien été enregistrées.</p>`}
-<p class="m">${esc(v.companyName)} a été prévenu et reviendra vers vous pour la suite du recrutement « ${esc(v.testTitle)} ». Bonne chance !</p></div>${scoreBlock}
+<p class="m">${esc(v.companyName)} a été prévenu et reviendra vers vous pour la suite du recrutement « ${esc(v.testTitle)} ». Bonne chance !</p>${contactBlock(v.contact)}</div>${scoreBlock}
 <p class="ft">Vous pouvez fermer cette page · <b>KTZ Évalue</b></p>`;
   return layout({ title: "Test terminé", color: v.color, body, banner: v.banner });
 }
@@ -504,15 +530,18 @@ export function publicSignupPage(v: {
   publicToken: string;
   color: string | null;
   companyName: string;
+  logoUrl?: string | null;
+  about?: About;
   testTitle: string;
   durationMinutes: number;
   photo?: string;
   error?: string;
   values?: { name?: string; email?: string; phone?: string };
 }) {
-  const body = `<div class="c"><div class="ph"${photoStyle(v.photo)}><p class="co">${avatar(v.companyName)}<span>${esc(v.companyName)}</span></p></div>
+  const body = `<div class="c"><div class="ph"${photoStyle(v.photo)}><p class="co">${avatar(v.companyName, v.logoUrl)}<span>${esc(v.companyName)}</span></p></div>
 <p class="hi tn">Test de recrutement</p><h1>${esc(v.testTitle)}</h1>
 <p class="m">À passer sur téléphone ou ordinateur, sans créer de compte.</p>
+${aboutBlock(v.companyName, v.about)}
 <div class="st"><div><b>${v.durationMinutes}</b><span>minutes</span></div><div><b>0</b><span>compte à créer</span></div><div><b>3G</b><span>suffit</span></div></div></div>
 <form class="c d1" method="post" action="/p/${esc(v.publicToken)}">
 <h2>Vos coordonnées</h2>

@@ -24,7 +24,7 @@ async function loadTest(publicToken: string) {
       durationMinutes: true,
       publicMaxAttempts: true,
       companyId: true,
-      company: { select: { name: true, primaryColor: true, country: true } },
+      company: { select: { name: true, primaryColor: true, country: true, logoUrl: true, description: true, website: true } },
     },
   });
 }
@@ -53,6 +53,8 @@ export async function GET(_req: NextRequest, ctx: RouteContext<"/p/[publicToken]
       photo: testPhoto(test.jobTitle, test.id),
       color: test.company.primaryColor,
       companyName: test.company.name,
+      logoUrl: test.company.logoUrl,
+      about: { description: test.company.description, website: test.company.website },
       testTitle: test.title,
       durationMinutes: test.durationMinutes,
     }),
@@ -84,6 +86,8 @@ export async function POST(req: NextRequest, ctx: RouteContext<"/p/[publicToken]
         photo: testPhoto(test.jobTitle, test.id),
         color: test.company.primaryColor,
         companyName: test.company.name,
+        logoUrl: test.company.logoUrl,
+        about: { description: test.company.description, website: test.company.website },
         testTitle: test.title,
         durationMinutes: test.durationMinutes,
         error,

@@ -6,7 +6,8 @@ import { ROLE_LABELS } from "@/lib/tests/model";
 import { ActionButton } from "@/components/form";
 import { btn, Card, Notice, PageTitle , Loading } from "@/components/ui";
 import { cancelInvitation, changeRole, removeMember } from "./actions";
-import { CompanyForm, InviteForm } from "./forms";
+import { InviteForm } from "./forms";
+import { CompanyForm } from "./company-form";
 
 export const metadata: Metadata = { title: "Entreprise et équipe" };
 
@@ -17,7 +18,18 @@ async function Content({ searchParams }: { searchParams: PageProps<"/entreprise"
   const [company, members, invitations] = await Promise.all([
     db.company.findUniqueOrThrow({
       where: { id: user.companyId },
-      select: { name: true, sector: true, country: true, city: true, primaryColor: true },
+      select: {
+        name: true,
+        sector: true,
+        country: true,
+        city: true,
+        primaryColor: true,
+        description: true,
+        website: true,
+        contactEmail: true,
+        contactPhone: true,
+        logoUrl: true,
+      },
     }),
     db.user.findMany({
       where: { companyId: user.companyId, deletedAt: null },
@@ -54,9 +66,13 @@ async function Content({ searchParams }: { searchParams: PageProps<"/entreprise"
               country: company.country,
               city: company.city ?? "",
               primaryColor: company.primaryColor ?? "",
+              description: company.description ?? "",
+              website: company.website ?? "",
+              contactEmail: company.contactEmail ?? "",
+              contactPhone: company.contactPhone ?? "",
+              logoUrl: company.logoUrl ?? "",
             }}
           />
-          <p className="mt-4 text-sm text-stone-600">Le logo pourra être ajouté quand le stockage des fichiers sera activé.</p>
         </Card>
 
         <Card>

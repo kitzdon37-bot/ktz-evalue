@@ -24,7 +24,12 @@ model Company {
   sector             String?
   country            String    @default("CF")
   city               String?
-  logoUrl            String?
+  logoUrl            String? // adresse publique du logo (/logo/<id>?v=…) ou lien externe
+  logoData           String? // logo envoyé par l’entreprise (data URL PNG ou JPEG, compressé)
+  description        String? // présentation courte montrée aux candidats
+  website            String?
+  contactEmail       String?
+  contactPhone       String?
   primaryColor       String?
   secondaryColor     String?
   creditsRemaining   Int       @default(0)
