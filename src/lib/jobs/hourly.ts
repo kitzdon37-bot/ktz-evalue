@@ -59,3 +59,15 @@ export async function closeAbandonedAttempts(now = new Date()) {
   }
   return attempts.length;
 }
+
+// Journal des connexions et sessions expirées : on ne garde pas les données plus longtemps que nécessaire.
+export const LOGIN_LOG_MONTHS = 12;
+export async function pruneLoginData(now = new Date()) {
+  const limit = new Date(now);
+  limit.setMonth(limit.getMonth() - LOGIN_LOG_MONTHS);
+  const [events, sessions] = await Promise.all([
+    db.loginEvent.deleteMany({ where: { createdAt: { lt: limit } } }),
+    db.session.deleteMany({ where: { expiresAt: { lt: now } } }),
+  ]);
+  return { events: events.count, sessions: sessions.count };
+}

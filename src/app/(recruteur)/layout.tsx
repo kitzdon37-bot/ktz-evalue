@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { LogOut } from "lucide-react";
+import { LogOut, ShieldCheck } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/session";
 import { Logo } from "@/components/logo";
 import { logout } from "../(auth)/actions";
@@ -22,6 +22,15 @@ async function UserMenu() {
   if (!user) return null;
   return (
     <div className="flex items-center gap-3">
+      {user.isPlatformAdmin && (
+        <Link
+          href="/admin"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-ink-900 px-3 py-2 text-xs font-bold text-white transition hover:bg-ink-800"
+          title="Espace administrateur"
+        >
+          <ShieldCheck className="h-4 w-4" /> Admin
+        </Link>
+      )}
       <div className="hidden text-right leading-tight md:block">
         <p className="text-sm font-semibold text-stone-900">{user.name}</p>
         {user.companyName && <p className="text-xs text-stone-500">{user.companyName}</p>}

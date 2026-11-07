@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { createSession } from "@/lib/auth/session";
+import { createSession, recordLoginFailure } from "@/lib/auth/session";
 import { finishOAuth, isOAuthProvider, OAUTH_COOKIE, readPending } from "@/lib/auth/oauth";
 
 function sameText(a: string, b: string): boolean {
@@ -44,13 +44,16 @@ export async function GET(request: NextRequest, { params }: RouteContext<"/api/a
 
   let destination = "/tableau-de-bord";
   if (existing) {
-    if (existing.deletedAt) return back("compte-supprime");
+    if (existing.deletedAt) {
+      await recordLoginFailure(identity.email, "google", "Compte supprimé", existing.id);
+      return back("compte-supprime");
+    }
     // Google garantit que l'adresse appartient bien à la personne.
     await db.user.update({
       where: { id: existing.id },
       data: { failedLogins: 0, lockedUntil: null, emailVerifiedAt: existing.emailVerifiedAt ?? new Date() },
     });
-    await createSession(existing.id);
+    await createSession(existing.id, "google");
   } else {
     // Une invitation d'équipe attend cette adresse : il faut passer par le lien reçu,
     // sinon la personne se retrouverait dans une entreprise vide.
@@ -71,7 +74,7 @@ export async function GET(request: NextRequest, { params }: RouteContext<"/api/a
       },
       select: { id: true },
     });
-    await createSession(user.id);
+    await createSession(user.id, "google");
     destination = "/entreprise?bienvenue=1";
   }
 

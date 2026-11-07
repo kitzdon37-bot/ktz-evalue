@@ -12,7 +12,8 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
-    "demo:account": "node scripts/create-demo-account.mjs"
+    "demo:account": "node scripts/create-demo-account.mjs",
+    "admin:promouvoir": "node scripts/promouvoir-admin.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.2.0",

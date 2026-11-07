@@ -70,6 +70,7 @@ model User {
   deletedAt       DateTime?
 
   sessions       Session[]
+  loginEvents    LoginEvent[]
   authTokens     AuthToken[]
   testsCreated   Test[]           @relation("TestCreator")
   scoreOverrides Answer[]         @relation("ScoreOverrider")
@@ -85,9 +86,35 @@ model Session {
   expiresAt DateTime
   userAgent String?
   ip        String?
+  method    String? // mot de passe, google, lien email…
+  country   String? // lieu approximatif d'après l'adresse IP (hébergeur)
+  region    String?
+  city      String?
   createdAt DateTime @default(now())
+  lastSeenAt DateTime @default(now()) // dernière activité (mise à jour toutes les 2 minutes au plus)
 
   @@index([userId])
+  @@index([lastSeenAt])
+}
+
+// Journal des connexions (réussies et échouées), visible dans l'espace administrateur.
+model LoginEvent {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email     String
+  method    String
+  success   Boolean
+  reason    String?
+  ip        String?
+  userAgent String?
+  country   String?
+  region    String?
+  city      String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
 }
 
 enum AuthTokenType {

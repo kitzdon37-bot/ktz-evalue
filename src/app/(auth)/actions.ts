@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { afterFailedLogin, isLocked } from "@/lib/auth/lockout";
-import { createSession, deleteSession, getCurrentUser } from "@/lib/auth/session";
+import { createSession, deleteSession, getCurrentUser, recordLoginFailure } from "@/lib/auth/session";
 import { consumeAuthToken, issueAuthToken } from "@/lib/auth/auth-tokens";
 import { appUrl, linkEmail, sendEmail } from "@/lib/email";
 import { hashToken } from "@/lib/auth/tokens";
@@ -77,7 +77,7 @@ export async function signup(_state: FormState, formData: FormData): Promise<For
     // Le compte est créé : l'email pourra être renvoyé depuis le tableau de bord.
     console.error(e);
   }
-  await createSession(user.id);
+  await createSession(user.id, "signup");
   redirect("/tableau-de-bord");
 }
 
@@ -98,9 +98,11 @@ export async function login(_state: FormState, formData: FormData): Promise<Form
   });
   if (!user || !user.passwordHash || user.deletedAt) {
     await verifyPassword(await getDummyHash(), password);
+    await recordLoginFailure(email, "password", !user ? "Compte inconnu" : user.deletedAt ? "Compte supprimé" : "Compte sans mot de passe (Google)", user?.id);
     return invalid;
   }
   if (isLocked(user.lockedUntil)) {
+    await recordLoginFailure(email, "password", "Compte bloqué (trop d'essais)", user.id);
     return {
       message:
         "Trop de tentatives. Votre compte est bloqué pendant 15 minutes. Vous pouvez aussi demander un lien de connexion par email.",
@@ -108,11 +110,12 @@ export async function login(_state: FormState, formData: FormData): Promise<Form
   }
   if (!(await verifyPassword(user.passwordHash, password))) {
     await db.user.update({ where: { id: user.id }, data: afterFailedLogin(user.failedLogins) });
+    await recordLoginFailure(email, "password", "Mot de passe incorrect", user.id);
     return invalid;
   }
 
   await db.user.update({ where: { id: user.id }, data: { failedLogins: 0, lockedUntil: null } });
-  await createSession(user.id);
+  await createSession(user.id, "password");
   redirect("/tableau-de-bord");
 }
 
@@ -163,7 +166,7 @@ export async function confirmMagicLink(_state: FormState, formData: FormData): P
     where: { id: userId },
     data: { failedLogins: 0, lockedUntil: null, emailVerifiedAt: user?.emailVerifiedAt ?? new Date() },
   });
-  await createSession(userId);
+  await createSession(userId, "magic_link");
   redirect("/tableau-de-bord");
 }
 
@@ -214,7 +217,7 @@ export async function resetPassword(_state: FormState, formData: FormData): Prom
     }),
     db.session.deleteMany({ where: { userId } }),
   ]);
-  await createSession(userId);
+  await createSession(userId, "reset");
   redirect("/tableau-de-bord");
 }
 
@@ -257,7 +260,7 @@ export async function acceptInvitation(_state: FormState, formData: FormData): P
     });
   });
   if (!user) return { message: "Cette invitation a déjà été utilisée." };
-  await createSession(user.id);
+  await createSession(user.id, "invitation");
   redirect("/tableau-de-bord");
 }
 
