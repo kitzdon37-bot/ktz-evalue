@@ -4,13 +4,14 @@ import { db } from "@/lib/db";
 import { requireCompany } from "@/lib/tenant";
 import { ROLE_LABELS } from "@/lib/tests/model";
 import { ActionButton } from "@/components/form";
-import { btn, Card, PageTitle , Loading } from "@/components/ui";
+import { btn, Card, Notice, PageTitle , Loading } from "@/components/ui";
 import { cancelInvitation, changeRole, removeMember } from "./actions";
 import { CompanyForm, InviteForm } from "./forms";
 
 export const metadata: Metadata = { title: "Entreprise et équipe" };
 
-async function Content() {
+async function Content({ searchParams }: { searchParams: PageProps<"/entreprise">["searchParams"] }) {
+  const { bienvenue } = await searchParams;
   const user = await requireCompany();
   const isOwner = user.role === "OWNER";
   const [company, members, invitations] = await Promise.all([
@@ -37,6 +38,12 @@ async function Content() {
     <>
       <PageTitle eyebrow="Paramètres" title="Entreprise et équipe" subtitle="Ces informations sont visibles par les candidats au début du test." />
       <div className="space-y-6">
+        {bienvenue && (
+          <Notice tone="success">
+            <strong>Bienvenue sur KTZ Évalue !</strong> Votre compte est créé avec Google. Indiquez le vrai nom de votre entreprise
+            ci-dessous : il est montré aux candidats au début de chaque test.
+          </Notice>
+        )}
         <Card>
           <h2 className="mb-4 text-base font-bold text-stone-900">Fiche entreprise</h2>
           <CompanyForm
@@ -108,10 +115,10 @@ async function Content() {
   );
 }
 
-export default function CompanyPage() {
+export default function CompanyPage(props: PageProps<"/entreprise">) {
   return (
     <Suspense fallback={<Loading />}>
-      <Content />
+      <Content searchParams={props.searchParams} />
     </Suspense>
   );
 }

@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { LoginForm, MagicLinkForm } from "../forms";
+import { OAuthButtons, OAuthMessage } from "../oauth-buttons";
 
 export const metadata: Metadata = { title: "Connexion" };
 
 // Message affiché après un clic sur le lien de confirmation d'email.
 async function EmailStatus({ searchParams }: { searchParams: PageProps<"/connexion">["searchParams"] }) {
-  const { email } = await searchParams;
+  const { email, oauth } = await searchParams;
+  if (oauth) return <OAuthMessage reason={oauth} />;
   if (email === "confirme") {
     return (
       <p role="status" className="mb-4 rounded-md bg-brand-50 px-3 py-2 text-sm text-brand-900">
@@ -33,6 +35,7 @@ export default function LoginPage(props: PageProps<"/connexion">) {
       <Suspense>
         <EmailStatus searchParams={props.searchParams} />
       </Suspense>
+      <OAuthButtons separator="after" />
       <LoginForm />
       <p className="mt-3 text-right text-sm">
         <Link href="/mot-de-passe-oublie" className="font-semibold text-brand-700 hover:text-brand-800 hover:underline">
