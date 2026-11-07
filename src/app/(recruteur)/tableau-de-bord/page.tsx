@@ -114,12 +114,13 @@ async function Dashboard() {
               </div>
             )}
           </div>
-          <div className="relative hidden h-full min-h-56 md:block">
+          {/* Photo : bandeau en haut sur téléphone, à droite sur ordinateur */}
+          <div className="relative order-first -mb-6 h-44 sm:h-52 md:order-none md:mb-0 md:h-full md:min-h-56">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/images/recruteurs-resultats.jpg"
               alt="Équipe de recrutement qui examine les résultats"
-              className="kenburns absolute inset-0 h-full w-full object-cover [mask-image:linear-gradient(90deg,transparent,#000_35%)]"
+              className="kenburns absolute inset-0 h-full w-full object-cover [mask-image:linear-gradient(180deg,#000_55%,transparent)] md:[mask-image:linear-gradient(90deg,transparent,#000_35%)]"
             />
           </div>
         </div>
